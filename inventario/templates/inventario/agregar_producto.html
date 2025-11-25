@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Agregar Producto - Sistema POS{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <span class="navbar-brand">
+            <i class="fas fa-plus-circle"></i> Agregar Producto
+        </span>
+        <div class="d-flex">
+            <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-light btn-sm me-2">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <a href="{% url 'autenticacion:logout' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-box"></i> Nuevo Producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Columna 1 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">
+                                        Nombre del Producto <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="codigo_barras" class="form-label">
+                                        Código de Barras
+                                    </label>
+                                    <input type="text" class="form-control" id="codigo_barras" name="codigo_barras">
+                                    <small class="text-muted">Opcional</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="categoria" class="form-label">
+                                        Categoría <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="categoria" name="categoria" required>
+                                        <option value="">Seleccionar categoría...</option>
+                                        <option value="1">Electrónica</option>
+                                        <option value="2">Alimentos</option>
+                                        <option value="3">Ropa</option>
+                                        <option value="4">Hogar</option>
+                                        <option value="5">Otros</option>
+                                    </select>
+                                    <small class="text-muted">
+                                        <a href="#" class="text-decoration-none">+ Crear nueva categoría</a>
+                                    </small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="imagen" class="form-label">
+                                        Imagen del Producto
+                                    </label>
+                                    <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*">
+                                    <small class="text-muted">Formatos: JPG, PNG (Max 2MB)</small>
+                                </div>
+                            </div>
+
+                            <!-- Columna 2 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="precio" class="form-label">
+                                        Precio <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">COP</span>
+                                        <input type="number" class="form-control" id="precio" name="precio" 
+                                               min="0" step="0.01" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="stock" class="form-label">
+                                        Stock Inicial <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" class="form-control" id="stock" name="stock" 
+                                           min="0" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="descripcion" class="form-label">
+                                        Descripción
+                                    </label>
+                                    <textarea class="form-control" id="descripcion" name="descripcion" 
+                                              rows="4" placeholder="Descripción del producto..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <small>
+                                        <i class="fas fa-info-circle"></i>
+                                        Los campos marcados con <span class="text-danger">*</span> son obligatorios
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'inventario:lista_productos' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Producto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

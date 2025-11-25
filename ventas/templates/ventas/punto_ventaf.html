@@ -1,0 +1,377 @@
+{% extends 'base.html' %}
+
+{% block title %}Punto de Venta{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-cash-register"></i> Punto de Venta</h2>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'ventas:listar' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> Ver Ventas
+            </a>
+        </div>
+    </div>
+
+    <form method="post" id="formVenta">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- COLUMNA IZQUIERDA: Productos y Carrito -->
+            <div class="col-lg-8">
+                <!-- Buscador de Productos -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="buscarProducto"
+                                   placeholder="Buscar producto por nombre..."
+                                   autocomplete="off">
+                        </div>
+                        <div id="resultadosProductos" class="list-group mt-2" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Carrito de Compras -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Carrito de Compras</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="tablaCarrito">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th width="120">Precio</th>
+                                        <th width="120">Cantidad</th>
+                                        <th width="120">Subtotal</th>
+                                        <th width="80">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="carritoBody">
+                                    <tr id="carritoVacio">
+                                        <td colspan="5" class="text-center text-muted py-5">
+                                            <i class="fas fa-shopping-cart fa-3x mb-3 d-block"></i>
+                                            El carrito está vacío. Busca y agrega productos.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: Resumen y Cliente -->
+            <div class="col-lg-4">
+                <!-- Selección de Cliente -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-user"></i> Cliente</h6>
+                    </div>
+                    <div class="card-body">
+                        <select name="cliente_id" id="selectCliente" class="form-select" required>
+                            <option value="">Seleccionar cliente...</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">
+                                {{ cliente.nombre }} - {{ cliente.cedula }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Selecciona el cliente
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Método de Pago -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-credit-card"></i> Pago</h6>
+                    </div>
+                    <div class="card-body">
+                        <select name="metodo_pago" class="form-select mb-2">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="mixto">Mixto</option>
+                        </select>
+                        
+                        <label class="form-label">Descuento ($)</label>
+                        <input type="number" 
+                               name="descuento" 
+                               id="inputDescuento"
+                               class="form-control" 
+                               value="0" 
+                               min="0" 
+                               step="0.01">
+                    </div>
+                </div>
+
+                <!-- Resumen de Venta -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-calculator"></i> Resumen</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong id="resumenSubtotal">$0.00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>IVA (19%):</span>
+                            <strong id="resumenImpuesto">$0.00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Descuento:</span>
+                            <strong id="resumenDescuento" class="text-danger">$0.00</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <h5>TOTAL:</h5>
+                            <h5 class="text-success" id="resumenTotal">$0.00</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notas -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <label class="form-label">Notas (opcional)</label>
+                        <textarea name="notas" class="form-control" rows="2" 
+                                  placeholder="Observaciones sobre la venta..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg" id="btnProcesarVenta">
+                        <i class="fas fa-check-circle"></i> Procesar Venta
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="btnCancelar">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input oculto para enviar los productos -->
+        <input type="hidden" name="productos" id="inputProductos">
+    </form>
+</div>
+
+<script>
+// Función para convertir formato colombiano a número
+function convertirPrecio(precio_str) {
+    if (!precio_str) return 0;
+    // Elimina puntos (miles) y reemplaza coma por punto
+    return parseFloat(String(precio_str).replace(/\./g, '').replace(',', '.'));
+}
+
+// Variables globales
+let carrito = [];
+
+// Productos desde Django (JSON serializado correctamente)
+let productosDisponibles = {{ productos_json | safe }};
+console.log('DEBUG: productosDisponibles cargados desde Django:', productosDisponibles);
+console.log('DEBUG: Total de productos:', productosDisponibles.length);
+
+// Búsqueda de productos
+document.getElementById('buscarProducto').addEventListener('input', function(e) {
+    const busqueda = e.target.value.toLowerCase();
+    const resultadosDiv = document.getElementById('resultadosProductos');
+    
+    if (busqueda.length < 2) {
+        resultadosDiv.style.display = 'none';
+        return;
+    }
+    
+    const resultados = productosDisponibles.filter(p => 
+        p.nombre.toLowerCase().includes(busqueda)
+    ).slice(0, 5);
+    
+    if (resultados.length > 0) {
+        resultadosDiv.innerHTML = resultados.map(p => `
+            <a href="#" class="list-group-item list-group-item-action" onclick="agregarAlCarrito(${p.id}); return false;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${p.nombre}</strong>
+                        <br>
+                        <small class="text-muted">Stock: ${p.stock}</small>
+                    </div>
+                    <span class="badge bg-success">$${p.precio.toLocaleString()}</span>
+                </div>
+            </a>
+        `).join('');
+        resultadosDiv.style.display = 'block';
+    } else {
+        resultadosDiv.innerHTML = '<div class="list-group-item text-muted">No se encontraron productos</div>';
+        resultadosDiv.style.display = 'block';
+    }
+});
+
+// Agregar producto al carrito
+function agregarAlCarrito(productoId) {
+    const producto = productosDisponibles.find(p => p.id === productoId);
+    if (!producto) return;
+    
+    const itemExistente = carrito.find(item => item.producto_id === productoId);
+    
+    if (itemExistente) {
+        if (itemExistente.cantidad >= producto.stock) {
+            alert(`Stock insuficiente. Disponible: ${producto.stock}`);
+            return;
+        }
+        itemExistente.cantidad++;
+    } else {
+        carrito.push({
+            producto_id: productoId,
+            nombre: producto.nombre,
+            precio: producto.precio,
+            cantidad: 1,
+            stock: producto.stock
+        });
+    }
+    
+    actualizarCarrito();
+    document.getElementById('buscarProducto').value = '';
+    document.getElementById('resultadosProductos').style.display = 'none';
+}
+
+// Actualizar vista del carrito
+function actualizarCarrito() {
+    const tbody = document.getElementById('carritoBody');
+    const carritoVacio = document.getElementById('carritoVacio');
+    
+    if (carrito.length === 0) {
+        carritoVacio.style.display = 'table-row';
+        return;
+    }
+    
+    carritoVacio.style.display = 'none';
+    
+    tbody.innerHTML = carritoVacio.outerHTML + carrito.map((item, index) => `
+        <tr>
+            <td>
+                <strong>${item.nombre}</strong>
+                <br>
+                <small class="text-muted">Stock: ${item.stock}</small>
+            </td>
+            <td>$${item.precio.toLocaleString()}</td>
+            <td>
+                <div class="input-group input-group-sm">
+                    <button class="btn btn-outline-secondary" type="button" onclick="cambiarCantidad(${index}, -1)">-</button>
+                    <input type="number" class="form-control text-center" value="${item.cantidad}" min="1" max="${item.stock}" 
+                           onchange="actualizarCantidad(${index}, this.value)">
+                    <button class="btn btn-outline-secondary" type="button" onclick="cambiarCantidad(${index}, 1)">+</button>
+                </div>
+            </td>
+            <td><strong>$${(item.precio * item.cantidad).toLocaleString()}</strong></td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarDelCarrito(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    actualizarResumen();
+}
+
+// Cambiar cantidad
+function cambiarCantidad(index, cambio) {
+    const item = carrito[index];
+    const nuevaCantidad = item.cantidad + cambio;
+    
+    if (nuevaCantidad < 1 || nuevaCantidad > item.stock) {
+        if (nuevaCantidad > item.stock) alert(`Stock insuficiente. Disponible: ${item.stock}`);
+        return;
+    }
+    
+    item.cantidad = nuevaCantidad;
+    actualizarCarrito();
+}
+
+// Actualizar cantidad manual
+function actualizarCantidad(index, valor) {
+    const cantidad = parseInt(valor);
+    const item = carrito[index];
+    
+    if (cantidad < 1 || cantidad > item.stock) {
+        alert(`Cantidad inválida. Stock disponible: ${item.stock}`);
+        actualizarCarrito();
+        return;
+    }
+    
+    item.cantidad = cantidad;
+    actualizarCarrito();
+}
+
+// Eliminar del carrito
+function eliminarDelCarrito(index) {
+    carrito.splice(index, 1);
+    actualizarCarrito();
+}
+
+// Actualizar resumen
+function actualizarResumen() {
+    const subtotal = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const descuento = parseFloat(document.getElementById('inputDescuento').value) || 0;
+    const impuesto = subtotal * 0.19;
+    const total = subtotal + impuesto - descuento;
+    
+    document.getElementById('resumenSubtotal').textContent = '$' + subtotal.toLocaleString('es-CO', {minimumFractionDigits: 2});
+    document.getElementById('resumenImpuesto').textContent = '$' + impuesto.toLocaleString('es-CO', {minimumFractionDigits: 2});
+    document.getElementById('resumenDescuento').textContent = '$' + descuento.toLocaleString('es-CO', {minimumFractionDigits: 2});
+    document.getElementById('resumenTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits: 2});
+}
+
+// Actualizar resumen al cambiar descuento
+document.getElementById('inputDescuento').addEventListener('input', actualizarResumen);
+
+// Procesar venta
+document.getElementById('formVenta').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (carrito.length === 0) {
+        alert('Debe agregar al menos un producto al carrito');
+        return;
+    }
+    
+    const clienteId = document.getElementById('selectCliente').value;
+    if (!clienteId) {
+        alert('Debe seleccionar un cliente');
+        return;
+    }
+    
+    document.getElementById('inputProductos').value = JSON.stringify(carrito);
+    
+    if (confirm('¿Confirmar la venta?')) {
+        this.submit();
+    }
+});
+
+// Cancelar venta
+document.getElementById('btnCancelar').addEventListener('click', function() {
+    if (confirm('¿Está seguro de cancelar la venta? Se perderán todos los datos.')) {
+        carrito = [];
+        actualizarCarrito();
+        document.getElementById('formVenta').reset();
+    }
+});
+
+// Cerrar resultados al hacer clic fuera
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#buscarProducto') && !e.target.closest('#resultadosProductos')) {
+        document.getElementById('resultadosProductos').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

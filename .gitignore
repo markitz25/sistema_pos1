@@ -1,0 +1,51 @@
+New-Item -Path ".gitignore" -ItemType File -Force
+```
+
+Abre `.gitignore` con VS Code y pega esto:
+```
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+*.pot
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets
+.env
+*.key
+*.pem
+secrets.json
+
+# Node modules (si usas npm)
+node_modules/
+
+# Archivos de backup
+*.bak
+*~

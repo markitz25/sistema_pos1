@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Administrador{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: transform 0.3s ease;
+        border-left: 4px solid var(--primary);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+    }
+    
+    .chart-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Dashboard Administrativo</h2>
+            <p class="text-muted mb-0">Bienvenido, {{ user.trabajador.nombre }}</p>
+        </div>
+        <div>
+            <a href="{% url 'ventas:punto_venta' %}" class="btn btn-primary">
+                <i class="fas fa-cash-register"></i> Nueva Venta
+            </a>
+        </div>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card" style="border-left-color: #3B82F6;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase small">Ventas Hoy</p>
+                        <h3 class="mb-0 fw-bold">${{ total_ventas_hoy|floatformat:0 }}</h3>
+                        <small class="text-muted">{{ cantidad_ventas_hoy }} transacciones</small>
+                    </div>
+                    <div class="stat-icon" style="background: #EFF6FF; color: #3B82F6;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card" style="border-left-color: #10B981;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase small">Ventas Semana</p>
+                        <h3 class="mb-0 fw-bold">${{ total_ventas_semana|floatformat:0 }}</h3>
+                        <small class="text-muted">Últimos 7 días</small>
+                    </div>
+                    <div class="stat-icon" style="background: #D1FAE5; color: #10B981;">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card" style="border-left-color: #F59E0B;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase small">Ventas Mes</p>
+                        <h3 class="mb-0 fw-bold">${{ total_ventas_mes|floatformat:0 }}</h3>
+                        <small class="text-muted">{{ cantidad_ventas_mes }} ventas</small>
+                    </div>
+                    <div class="stat-icon" style="background: #FEF3C7; color: #F59E0B;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="stat-card" style="border-left-color: #8B5CF6;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 text-uppercase small">Productos</p>
+                        <h3 class="mb-0 fw-bold">{{ total_productos }}</h3>
+                        <small class="text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            {{ productos_stock_bajo }} stock bajo
+                        </small>
+                    </div>
+                    <div class="stat-icon" style="background: #EDE9FE; color: #8B5CF6;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Gráficos -->
+        <div class="col-lg-8 mb-4">
+            <!-- Ventas por mes -->
+            <div class="chart-card">
+                <h5 class="mb-4">
+                    <i class="fas fa-chart-line text-primary"></i>
+                    Ventas Últimos 12 Meses
+                </h5>
+                <div class="chart-container">
+                    <canvas id="chartVentasMes"></canvas>
+                </div>
+            </div>
+            
+            <!-- Productos más vendidos -->
+            <div class="chart-card">
+                <h5 class="mb-4">
+                    <i class="fas fa-trophy text-warning"></i>
+                    Top 10 Productos Más Vendidos
+                </h5>
+                <div class="chart-container">
+                    <canvas id="chartProductos"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lateral -->
+        <div class="col-lg-4">
+            <!-- Top clientes -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i> Top 5 Clientes
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for cliente in clientes_top %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ cliente.nombre }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ cliente.cedula }}</small>
+                                </div>
+                                <span class="badge bg-success">
+                                    ${{ cliente.total_compras|floatformat:0 }}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted">
+                            No hay datos
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ventas recientes -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock"></i> Ventas Recientes
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for venta in ventas_recientes %}
+                        <a href="{% url 'ventas:detalle' venta.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="text-primary">#{{ venta.id }}</strong>
+                                <span class="badge bg-success">${{ venta.total|floatformat:0 }}</span>
+                            </div>
+                            <small class="text-muted">
+                                {{ venta.cliente.nombre }} - {{ venta.fecha|date:"d/m/Y H:i" }}
+                            </small>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted">
+                            No hay ventas
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Configuración general
+Chart.defaults.font.family = 'Inter, sans-serif';
+Chart.defaults.font.size = 12;
+
+// Gráfico de ventas por mes
+fetch("{% url 'tablero:api_ventas_por_mes' %}")
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartVentasMes'), {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Ventas ($)',
+                    data: data.data,
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: v => '$' + v.toLocaleString()
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+// Gráfico de productos
+fetch("{% url 'tablero:api_productos_mas_vendidos' %}")
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartProductos'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Unidades',
+                    data: data.data,
+                    backgroundColor: [
+                        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+                        '#06B6D4', '#EC4899', '#14B8A6', '#F97316', '#84CC16'
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

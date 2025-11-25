@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Punto de Venta - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 text-white">
+                <i class="fas fa-cash-register"></i> Punto de Venta
+            </h2>
+            <small class="text-white opacity-75">Registra nuevas ventas de forma rápida</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'ventas:listar' %}" class="btn btn-light btn-lg shadow-sm">
+                <i class="fas fa-list"></i> Historial
+            </a>
+            <button type="button" class="btn btn-outline-light btn-lg" onclick="mostrarAtajos()">
+                <i class="fas fa-keyboard"></i> Atajos
+            </button>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Productos disponibles</small>
+                            <h5 class="mb-0">{{ productos.count }}</h5>
+                        </div>
+                        <i class="fas fa-box fa-2x text-primary opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Clientes activos</small>
+                            <h5 class="mb-0">{{ clientes.count }}</h5>
+                        </div>
+                        <i class="fas fa-users fa-2x text-success opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">En carrito</small>
+                            <h5 class="mb-0" id="itemsCarrito">0</h5>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-2x text-warning opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Hora actual</small>
+                            <h5 class="mb-0" id="horaActual">--:--</h5>
+                        </div>
+                        <i class="fas fa-clock fa-2x text-info opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="formVenta">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- COLUMNA IZQUIERDA: Productos y Carrito -->
+            <div class="col-lg-8">
+                
+                <!-- Lista de Productos -->
+                <div class="card shadow-sm mb-3 border-primary">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <h6 class="mb-0 text-white">
+                            <i class="fas fa-box"></i> Productos Disponibles
+                            <span class="badge bg-light text-dark float-end">{{ productos.count }} productos</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Buscador -->
+                        <div class="input-group input-group-lg mb-3">
+                            <span class="input-group-text">
+                                <i class="fas fa-search text-primary"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="buscarProducto"
+                                   placeholder="Buscar producto..."
+                                   autocomplete="off"
+                                   autofocus>
+                            <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusqueda" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Lista de productos scrolleable -->
+                        <div class="list-group" id="listaProductos" style="max-height: 350px; overflow-y: auto;">
+                            {% for producto in productos %}
+                            <a href="#" class="list-group-item list-group-item-action producto-item" 
+                               data-nombre="{{ producto.nombre|lower }}"
+                               onclick="agregarAlCarrito({{ producto.id }}, '{{ producto.nombre|escapejs }}', {{ producto.precio }}, {{ producto.stock }}); return false;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ producto.nombre }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-box"></i> Stock: {{ producto.stock }} | 
+                                            <i class="fas fa-tag"></i> {{ producto.categoria.nombre|default:"Sin categoría" }}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-success fs-6">${{ producto.precio|floatformat:0 }}</span>
+                                </div>
+                            </a>
+                            {% empty %}
+                            <div class="list-group-item text-muted">
+                                <i class="fas fa-info-circle"></i> No hay productos disponibles
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Haz clic en un producto para agregarlo al carrito
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Carrito -->
+                <div class="card shadow-sm">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-white">
+                                <i class="fas fa-shopping-cart"></i> Carrito de Compras
+                            </h5>
+                            <button type="button" class="btn btn-sm btn-light" id="btnVaciar" style="display: none;">
+                                <i class="fas fa-trash"></i> Vaciar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40%">Producto</th>
+                                        <th width="15%" class="text-end">Precio</th>
+                                        <th width="20%" class="text-center">Cantidad</th>
+                                        <th width="15%" class="text-end">Subtotal</th>
+                                        <th width="10%" class="text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="carritoBody">
+                                    <tr id="carritoVacio">
+                                        <td colspan="5" class="text-center text-muted py-5">
+                                            <i class="fas fa-shopping-cart fa-4x mb-3 d-block opacity-25"></i>
+                                            <h5>El carrito está vacío</h5>
+                                            <p class="mb-0">Selecciona productos para comenzar</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot id="carritoFooter" style="display: none;" class="table-light fw-bold">
+                                    <tr>
+                                        <td colspan="3" class="text-end">SUBTOTAL:</td>
+                                        <td class="text-end" id="footerSubtotal">$0</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: Cliente y Resumen -->
+            <div class="col-lg-4">
+                
+                <!-- Cliente -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-user"></i> Cliente</h6>
+                    </div>
+                    <div class="card-body">
+                        <select name="cliente_id" id="selectCliente" class="form-select" required>
+                            <option value="">Seleccionar cliente...</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">
+                                {{ cliente.nombre }} - {{ cliente.cedula }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Método de Pago -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-credit-card"></i> Pago</h6>
+                    </div>
+                    <div class="card-body">
+                        <select name="metodo_pago" class="form-select mb-2">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="mixto">Mixto</option>
+                        </select>
+                        
+                        <label class="form-label">Descuento ($)</label>
+                        <input type="number" 
+                               name="descuento" 
+                               id="inputDescuento"
+                               class="form-control" 
+                               value="0" 
+                               min="0" 
+                               step="1">
+                    </div>
+                </div>
+
+                <!-- Resumen -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-calculator"></i> Resumen</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong id="resumenSubtotal">$0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>IVA (19%):</span>
+                            <strong id="resumenIVA">$0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Descuento:</span>
+                            <strong id="resumenDescuento" class="text-danger">$0</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <h5>TOTAL:</h5>
+                            <h5 class="text-success" id="resumenTotal">$0</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notas -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <label class="form-label">Notas (opcional)</label>
+                        <textarea name="notas" class="form-control" rows="2" 
+                                  placeholder="Observaciones..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-check-circle"></i> Procesar Venta
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="btnCancelar">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input oculto con productos -->
+        <input type="hidden" name="productos" id="inputProductos">
+    </form>
+</div>
+
+<script>
+// ==================== VARIABLES GLOBALES ====================
+let carrito = [];
+
+// ==================== ACTUALIZAR HORA ====================
+function actualizarHora() {
+    const ahora = new Date();
+    const hora = ahora.toLocaleTimeString('es-CO', {
+        hour: '2-digit', 
+        minute: '2-digit'
+    });
+    document.getElementById('horaActual').textContent = hora;
+}
+
+// Iniciar reloj
+setInterval(actualizarHora, 1000);
+actualizarHora();
+
+// ==================== BÚSQUEDA LOCAL ====================
+document.getElementById('buscarProducto').addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase().trim();
+    const btnLimpiar = document.getElementById('btnLimpiarBusqueda');
+    const items = document.querySelectorAll('.producto-item');
+    
+    btnLimpiar.style.display = query.length > 0 ? 'block' : 'none';
+    
+    items.forEach(item => {
+        const nombre = item.getAttribute('data-nombre');
+        if (nombre.includes(query)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+});
+
+// Limpiar búsqueda
+document.getElementById('btnLimpiarBusqueda').addEventListener('click', function() {
+    document.getElementById('buscarProducto').value = '';
+    const items = document.querySelectorAll('.producto-item');
+    items.forEach(item => {
+        item.style.display = 'block';
+    });
+    this.style.display = 'none';
+    document.getElementById('buscarProducto').focus();
+});
+
+// ==================== AGREGAR AL CARRITO ====================
+function agregarAlCarrito(id, nombre, precio, stock) {
+    const itemExistente = carrito.find(item => item.producto_id === id);
+    
+    if (itemExistente) {
+        if (itemExistente.cantidad >= stock) {
+            alert('❌ Stock insuficiente\nDisponible: ' + stock + ' unidades');
+            return;
+        }
+        itemExistente.cantidad++;
+    } else {
+        carrito.push({
+            producto_id: id,
+            nombre: nombre,
+            precio: precio,
+            cantidad: 1,
+            stock: stock
+        });
+    }
+    
+    actualizarCarrito();
+}
+
+// ==================== ACTUALIZAR CARRITO ====================
+function actualizarCarrito() {
+    const tbody = document.getElementById('carritoBody');
+    const carritoVacio = document.getElementById('carritoVacio');
+    const btnVaciar = document.getElementById('btnVaciar');
+    const footer = document.getElementById('carritoFooter');
+    
+    if (carrito.length === 0) {
+        carritoVacio.style.display = 'table-row';
+        btnVaciar.style.display = 'none';
+        footer.style.display = 'none';
+        document.getElementById('itemsCarrito').textContent = '0';
+        actualizarResumen();
+        return;
+    }
+    
+    carritoVacio.style.display = 'none';
+    btnVaciar.style.display = 'inline-block';
+    footer.style.display = 'table-footer-group';
+    
+    const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+    document.getElementById('itemsCarrito').textContent = totalItems;
+    
+    tbody.innerHTML = carritoVacio.outerHTML + carrito.map((item, index) => {
+        const subtotal = item.precio * item.cantidad;
+        return `
+        <tr>
+            <td>
+                <strong class="text-primary">${item.nombre}</strong>
+                <br>
+                <small class="text-muted">Stock: ${item.stock}</small>
+            </td>
+            <td class="text-end">
+                <strong>$${item.precio.toLocaleString('es-CO')}</strong>
+            </td>
+            <td>
+                <div class="input-group input-group-sm" style="max-width: 150px; margin: 0 auto;">
+                    <button class="btn btn-outline-primary" type="button" onclick="cambiarCantidad(${index}, -1)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" class="form-control text-center fw-bold" 
+                           value="${item.cantidad}" min="1" max="${item.stock}" 
+                           onchange="actualizarCantidad(${index}, this.value)">
+                    <button class="btn btn-outline-primary" type="button" onclick="cambiarCantidad(${index}, 1)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </td>
+            <td class="text-end">
+                <strong class="text-success fs-5">$${subtotal.toLocaleString('es-CO')}</strong>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarItem(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+        `;
+    }).join('');
+    
+    const subtotalCarrito = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    document.getElementById('footerSubtotal').textContent = '$' + subtotalCarrito.toLocaleString('es-CO');
+    
+    actualizarResumen();
+}
+
+// ==================== GESTIÓN DE CANTIDAD ====================
+function cambiarCantidad(index, cambio) {
+    const item = carrito[index];
+    const nuevaCantidad = item.cantidad + cambio;
+    
+    if (nuevaCantidad < 1 || nuevaCantidad > item.stock) {
+        if (nuevaCantidad > item.stock) {
+            alert('Stock insuficiente. Disponible: ' + item.stock);
+        }
+        return;
+    }
+    
+    item.cantidad = nuevaCantidad;
+    actualizarCarrito();
+}
+
+function actualizarCantidad(index, valor) {
+    const cantidad = parseInt(valor);
+    const item = carrito[index];
+    
+    if (cantidad < 1 || cantidad > item.stock || isNaN(cantidad)) {
+        alert('Cantidad inválida. Stock disponible: ' + item.stock);
+        actualizarCarrito();
+        return;
+    }
+    
+    item.cantidad = cantidad;
+    actualizarCarrito();
+}
+
+function eliminarItem(index) {
+    carrito.splice(index, 1);
+    actualizarCarrito();
+}
+
+// ==================== VACIAR CARRITO ====================
+document.getElementById('btnVaciar').addEventListener('click', function() {
+    if (confirm('¿Vaciar el carrito?')) {
+        carrito = [];
+        actualizarCarrito();
+    }
+});
+
+// ==================== ACTUALIZAR RESUMEN ====================
+function actualizarResumen() {
+    const subtotal = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const descuento = parseFloat(document.getElementById('inputDescuento').value) || 0;
+    const iva = subtotal * 0.19;
+    const total = subtotal + iva - descuento;
+    
+    document.getElementById('resumenSubtotal').textContent = '$' + Math.round(subtotal).toLocaleString('es-CO');
+    document.getElementById('resumenIVA').textContent = '$' + Math.round(iva).toLocaleString('es-CO');
+    document.getElementById('resumenDescuento').textContent = '$' + Math.round(descuento).toLocaleString('es-CO');
+    document.getElementById('resumenTotal').textContent = '$' + Math.round(total).toLocaleString('es-CO');
+}
+
+document.getElementById('inputDescuento').addEventListener('input', actualizarResumen);
+
+// ==================== PROCESAR VENTA ====================
+document.getElementById('formVenta').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (carrito.length === 0) {
+        alert('❌ Debe agregar productos al carrito');
+        return;
+    }
+    
+    if (!document.getElementById('selectCliente').value) {
+        alert('❌ Debe seleccionar un cliente');
+        return;
+    }
+    
+    document.getElementById('inputProductos').value = JSON.stringify(carrito);
+    
+    if (confirm('✅ ¿Confirmar la venta?')) {
+        this.submit();
+    }
+});
+
+// ==================== CANCELAR ====================
+document.getElementById('btnCancelar').addEventListener('click', function() {
+    if (confirm('¿Cancelar la venta actual?')) {
+        carrito = [];
+        actualizarCarrito();
+        document.getElementById('formVenta').reset();
+    }
+});
+
+// ==================== ATAJOS DE TECLADO ====================
+document.addEventListener('keydown', function(e) {
+    // Alt + B: Focus en buscador
+    if (e.altKey && e.key === 'b') {
+        e.preventDefault();
+        document.getElementById('buscarProducto').focus();
+    }
+    
+    // Alt + V: Vaciar carrito
+    if (e.altKey && e.key === 'v') {
+        e.preventDefault();
+        if (carrito.length > 0) {
+            document.getElementById('btnVaciar').click();
+        }
+    }
+    
+    // Alt + H: Ir a historial
+    if (e.altKey && e.key === 'h') {
+        e.preventDefault();
+        window.location.href = "{% url 'ventas:listar' %}";
+    }
+    
+    // Esc: Cancelar
+    if (e.key === 'Escape') {
+        document.getElementById('btnCancelar').click();
+    }
+});
+
+// ==================== MOSTRAR ATAJOS ====================
+function mostrarAtajos() {
+    alert('⌨️ ATAJOS DE TECLADO\n\n' +
+          '🔍 Búsqueda:\n' +
+          '  • Alt + B: Focus en buscador\n\n' +
+          '🛒 Carrito:\n' +
+          '  • Alt + V: Vaciar carrito\n\n' +
+          '📋 General:\n' +
+          '  • Alt + H: Ver historial\n' +
+          '  • Esc: Cancelar venta');
+}
+</script>
+{% endblock %}

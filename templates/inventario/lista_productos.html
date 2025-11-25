@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventario - Sistema POS{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <span class="navbar-brand">
+            <i class="fas fa-boxes"></i> Inventario de Productos
+        </span>
+        <div class="d-flex">
+            <a href="{% url 'tablero:index' %}" class="btn btn-outline-light btn-sm me-2">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="{% url 'autenticacion:logout' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i> Lista de Productos
+            </h5>
+            <div>
+                <a href="{% url 'inventario:lista_categorias' %}" class="btn btn-secondary btn-sm me-2">
+                    <i class="fas fa-tags"></i> Categorías
+                </a>
+                <a href="{% url 'inventario:agregar_producto' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Agregar Producto
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Búsqueda y Filtros -->
+            <form method="GET" class="row mb-3">
+                <div class="col-md-5">
+                    <input type="text" 
+                           name="q" 
+                           class="form-control" 
+                           placeholder="Buscar producto..." 
+                           value="{{ query }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="categoria">
+                        <option value="">Todas las categorías</option>
+                        {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if categoria.id|stringformat:"s" == categoria_seleccionada %}selected{% endif %}>
+                            {{ categoria.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-secondary w-100" type="submit">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+
+            <!-- Tabla de productos -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if productos %}
+                            {% for producto in productos %}
+                            <tr>
+                                <td>{{ producto.codigo_barras|default:"--" }}</td>
+                                <td>
+                                    <strong>{{ producto.nombre }}</strong>
+                                    {% if producto.descripcion %}
+                                    <br><small class="text-muted">{{ producto.descripcion|truncatewords:10 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ producto.categoria.nombre }}
+                                    </span>
+                                </td>
+                                <td>COP {{ producto.precio|floatformat:2 }}</td>
+                                <td>
+                                    {% if producto.stock < 10 %}
+                                        <span class="badge bg-danger">{{ producto.stock }}</span>
+                                    {% elif producto.stock < 20 %}
+                                        <span class="badge bg-warning text-dark">{{ producto.stock }}</span>
+                                    {% else %}
+                                        <span class="badge bg-success">{{ producto.stock }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if producto.stock > 0 %}
+                                        <span class="badge bg-success">Disponible</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Agotado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'inventario:editar_producto' producto.id %}" 
+                                       class="btn btn-sm btn-warning" 
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#eliminarModal{{ producto.id }}"
+                                            title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+
+                                    <!-- Modal de confirmación -->
+                                    <div class="modal fade" id="eliminarModal{{ producto.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Confirmar eliminación</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    ¿Está seguro que desea eliminar el producto <strong>{{ producto.nombre }}</strong>?
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <form method="POST" action="{% url 'inventario:eliminar_producto' producto.id %}" style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>No hay productos registrados aún.</p>
+                                    <a href="{% url 'inventario:agregar_producto' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Agregar primer producto
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <strong>Total de productos:</strong> {{ productos.count }}
+                        {% if query %}
+                        | <strong>Resultados de búsqueda:</strong> "{{ query }}"
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

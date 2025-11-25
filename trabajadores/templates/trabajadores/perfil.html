@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Columna izquierda: Info del perfil -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center p-4">
+                    <!-- Avatar -->
+                    <div class="mb-3">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" 
+                             style="width: 120px; height: 120px; font-size: 48px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+
+                    <!-- Nombre -->
+                    <h4 class="mb-1">{{ trabajador.nombre }} {{ trabajador.apellido }}</h4>
+                    <p class="text-muted mb-3">@{{ trabajador.usuario.username }}</p>
+
+                    <!-- Rol -->
+                    {% if trabajador.rol == 'admin' %}
+                    <span class="badge bg-danger mb-3">
+                        <i class="fas fa-user-shield"></i> Administrador
+                    </span>
+                    {% else %}
+                    <span class="badge bg-info mb-3">
+                        <i class="fas fa-user"></i> Trabajador
+                    </span>
+                    {% endif %}
+
+                    <!-- Estado -->
+                    <div class="mb-3">
+                        {% if trabajador.activo %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle"></i> Cuenta Activa
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-times-circle"></i> Cuenta Inactiva
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Fecha de registro -->
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-alt"></i>
+                        Miembro desde {{ trabajador.creado_en|date:"d/m/Y" }}
+                    </small>
+
+                    <hr class="my-3">
+
+                    <!-- Botones de acción -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'trabajadores:editar_perfil' %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Editar Perfil
+                        </a>
+                        <a href="{% url 'trabajadores:cambiar_contraseña' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-key"></i> Cambiar Contraseña
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: Información detallada -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Información Personal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-2 text-muted"><i class="fas fa-user"></i> Nombre</p>
+                            <p class="fw-bold">{{ trabajador.nombre }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2 text-muted"><i class="fas fa-user"></i> Apellido</p>
+                            <p class="fw-bold">{{ trabajador.apellido }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-2 text-muted"><i class="fas fa-envelope"></i> Correo Electrónico</p>
+                            <p class="fw-bold">
+                                {% if trabajador.usuario.email %}
+                                {{ trabajador.usuario.email }}
+                                {% else %}
+                                <span class="text-muted">No especificado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2 text-muted"><i class="fas fa-phone"></i> Teléfono</p>
+                            <p class="fw-bold">
+                                {% if trabajador.telefono %}
+                                {{ trabajador.telefono }}
+                                {% else %}
+                                <span class="text-muted">No especificado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <p class="mb-2 text-muted"><i class="fas fa-map-marker-alt"></i> Dirección</p>
+                            <p class="fw-bold">
+                                {% if trabajador.direccion %}
+                                {{ trabajador.direccion }}
+                                {% else %}
+                                <span class="text-muted">No especificada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de la cuenta -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-key"></i> Información de la Cuenta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="mb-2 text-muted"><i class="fas fa-user-tag"></i> Usuario</p>
+                            <p class="fw-bold">{{ trabajador.usuario.username }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-2 text-muted"><i class="fas fa-shield-alt"></i> Rol</p>
+                            <p class="fw-bold">{{ trabajador.get_rol_display }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-2 text-muted"><i class="fas fa-calendar-plus"></i> Fecha de Registro</p>
+                            <p class="fw-bold">{{ trabajador.creado_en|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    {% if trabajador.creado_por %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <p class="mb-2 text-muted"><i class="fas fa-user-plus"></i> Creado por</p>
+                            <p class="fw-bold">{{ trabajador.creado_por.username }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

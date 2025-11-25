@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura #{{ venta.id }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            background: white;
+        }
+        
+        .factura {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid #333;
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            flex: 1;
+        }
+        
+        .info-box h3 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .info-box p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table thead {
+            background: #f0f0f0;
+        }
+        
+        table th {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #333;
+            font-size: 13px;
+        }
+        
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+            font-size: 13px;
+        }
+        
+        .totales {
+            margin-top: 30px;
+            text-align: right;
+        }
+        
+        .totales table {
+            margin-left: auto;
+            width: 300px;
+        }
+        
+        .totales td {
+            padding: 8px 12px;
+        }
+        
+        .total-final {
+            font-size: 18px;
+            font-weight: bold;
+            background: #f0f0f0;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .estado {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .estado-completada {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .estado-cancelada {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="factura">
+        <!-- Header -->
+        <div class="header">
+            <h1>FACTURA DE VENTA</h1>
+            <p><strong>Sistema POS</strong></p>
+            <p>Factura #{{ venta.id }}</p>
+            {% if venta.estado == 'completada' %}
+            <span class="estado estado-completada">PAGADA</span>
+            {% elif venta.estado == 'cancelada' %}
+            <span class="estado estado-cancelada">CANCELADA</span>
+            {% endif %}
+        </div>
+
+        <!-- Información -->
+        <div class="info-section">
+            <div class="info-box">
+                <h3>INFORMACIÓN DEL CLIENTE</h3>
+                <p><strong>Nombre:</strong> {{ venta.cliente.nombre }}</p>
+                <p><strong>Cédula:</strong> {{ venta.cliente.cedula }}</p>
+                <p><strong>Teléfono:</strong> {{ venta.cliente.telefono }}</p>
+                {% if venta.cliente.correo %}
+                <p><strong>Email:</strong> {{ venta.cliente.correo }}</p>
+                {% endif %}
+                {% if venta.cliente.direccion %}
+                <p><strong>Dirección:</strong> {{ venta.cliente.direccion }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="info-box" style="text-align: right;">
+                <h3>INFORMACIÓN DE LA VENTA</h3>
+                <p><strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y" }}</p>
+                <p><strong>Hora:</strong> {{ venta.fecha|time:"H:i" }}</p>
+                <p><strong>Vendedor:</strong> {{ venta.usuario.get_full_name|default:venta.usuario.username }}</p>
+                <p><strong>Método de Pago:</strong> {{ venta.get_metodo_pago_display }}</p>
+            </div>
+        </div>
+
+        <!-- Productos -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th style="text-align: center;">Cantidad</th>
+                    <th style="text-align: right;">Precio Unit.</th>
+                    <th style="text-align: right;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in detalles %}
+                <tr>
+                    <td>
+                        {{ detalle.producto.nombre }}
+                        <br>
+                        <small style="color: #666;">{{ detalle.producto.categoria.nombre|default:"Sin categoría" }}</small>
+                    </td>
+                    <td style="text-align: center;">{{ detalle.cantidad }}</td>
+                    <td style="text-align: right;">${{ detalle.precio_unitario|floatformat:2 }}</td>
+                    <td style="text-align: right;"><strong>${{ detalle.subtotal|floatformat:2 }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Totales -->
+        <div class="totales">
+            <table>
+                <tr>
+                    <td>Subtotal:</td>
+                    <td style="text-align: right;"><strong>${{ venta.subtotal|floatformat:2 }}</strong></td>
+                </tr>
+                <tr>
+                    <td>IVA (19%):</td>
+                    <td style="text-align: right;"><strong>${{ venta.impuesto|floatformat:2 }}</strong></td>
+                </tr>
+                {% if venta.descuento > 0 %}
+                <tr>
+                    <td>Descuento:</td>
+                    <td style="text-align: right; color: red;"><strong>-${{ venta.descuento|floatformat:2 }}</strong></td>
+                </tr>
+                {% endif %}
+                <tr class="total-final">
+                    <td>TOTAL:</td>
+                    <td style="text-align: right;"><strong>${{ venta.total|floatformat:2 }}</strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Notas -->
+        {% if venta.notas %}
+        <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-left: 3px solid #666;">
+            <strong>Notas:</strong>
+            <p style="margin-top: 5px;">{{ venta.notas }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Gracias por su compra</p>
+            <p>Sistema POS - Factura generada el {{ "now"|date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+
+    <!-- Botón de Impresión (no se imprime) -->
+    <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()" style="padding: 10px 30px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+            <i class="fas fa-print"></i> Imprimir Factura
+        </button>
+        <button onclick="window.close()" style="padding: 10px 30px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-left: 10px;">
+            Cerrar
+        </button>
+    </div>
+
+    <script>
+        // Auto-imprimir al cargar (opcional)
+        // window.onload = function() { window.print(); }
+    </script>
+</body>
+</html>

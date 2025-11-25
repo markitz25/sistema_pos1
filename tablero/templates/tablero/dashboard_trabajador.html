@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Trabajador{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <h2 class="mb-1">
+            <i class="fas fa-home"></i> Mi Panel
+        </h2>
+        <p class="text-muted">Bienvenido, {{ user.username }}</p>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <!-- Mis Ventas Hoy -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-start border-primary border-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Mis Ventas Hoy</h6>
+                    <h3 class="mb-0 text-primary">${{ total_ventas_hoy|floatformat:0 }}</h3>
+                    <small class="text-muted">{{ cantidad_ventas_hoy }} transacciones</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mis Ventas del Mes -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-start border-success border-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Mis Ventas del Mes</h6>
+                    <h3 class="mb-0 text-success">${{ total_mis_ventas|floatformat:0 }}</h3>
+                    <small class="text-muted">{{ cantidad_mis_ventas }} ventas</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clientes -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-start border-info border-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Clientes Activos</h6>
+                    <h3 class="mb-0 text-info">{{ total_clientes }}</h3>
+                    <small class="text-muted">Disponibles</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-start border-warning border-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Productos</h6>
+                    <h3 class="mb-0 text-warning">{{ total_productos }}</h3>
+                    <small class="text-muted">Con stock</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Accesos rápidos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt"></i> Accesos Rápidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="{% url 'ventas:punto_venta' %}" class="btn btn-lg btn-primary">
+                            <i class="fas fa-cash-register"></i> Nueva Venta
+                        </a>
+                        <a href="{% url 'clientes:listar' %}" class="btn btn-lg btn-outline-info">
+                            <i class="fas fa-users"></i> Ver Clientes
+                        </a>
+                        <a href="{% url 'inventario:listar' %}" class="btn btn-lg btn-outline-secondary">
+                            <i class="fas fa-box"></i> Consultar Inventario
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mis ventas recientes -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock"></i> Mis Ventas Recientes
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for venta in mis_ventas_recientes %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="text-primary">#{{ venta.id }}</strong>
+                                <span class="badge bg-success">${{ venta.total|floatformat:0 }}</span>
+                            </div>
+                            <small class="text-muted">
+                                {{ venta.cliente.nombre }} - {{ venta.fecha|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                            <p class="mb-0">No has realizado ventas aún</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'ventas:listar' %}" class="btn btn-sm btn-success">
+                        Ver Todas Mis Ventas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
