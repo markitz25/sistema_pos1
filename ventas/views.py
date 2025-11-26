@@ -40,15 +40,17 @@ def punto_venta(request):
                 metodo_pago = request.POST.get('metodo_pago', 'efectivo')
                 
                 # Validaciones
-                if not cliente_id:
-                    messages.error(request, 'Debe seleccionar un cliente')
-                    return redirect('ventas:punto_venta')
-                
                 if not productos_ids:
                     messages.error(request, 'Debe agregar al menos un producto')
                     return redirect('ventas:punto_venta')
                 
-                cliente = Cliente.objects.get(id=cliente_id)
+                # Cliente opcional
+                cliente = None
+                if cliente_id:
+                    try:
+                        cliente = Cliente.objects.get(id=cliente_id)
+                    except Cliente.DoesNotExist:
+                        pass
                 
                 # Calcular totales con descuento por producto
                 subtotal = Decimal('0')
@@ -57,8 +59,12 @@ def punto_venta(request):
                 for i, producto_id in enumerate(productos_ids):
                     producto = Producto.objects.get(id=producto_id)
                     cantidad = int(cantidades[i])
-                    precio = Decimal(precios[i])
-                    descuento_producto = Decimal(descuentos[i]) if i < len(descuentos) else Decimal('0')
+                    precio_base = Decimal(precios[i])
+                    
+                    # CORRECCIÓN: Calcular descuento como porcentaje
+                    porcentaje_descuento = Decimal(descuentos[i]) if i < len(descuentos) and descuentos[i] else Decimal('0')
+                    descuento_producto = precio_base * (porcentaje_descuento / Decimal('100'))
+                    precio_con_descuento = precio_base - descuento_producto
                     
                     if producto.stock < cantidad:
                         messages.error(
@@ -69,7 +75,6 @@ def punto_venta(request):
                         return redirect('ventas:punto_venta')
                     
                     # Calcular subtotal con descuento aplicado por producto
-                    precio_con_descuento = precio - descuento_producto
                     subtotal += precio_con_descuento * cantidad
                 
                 # Calcular IVA sobre el subtotal YA con descuento
@@ -92,10 +97,12 @@ def punto_venta(request):
                 for i, producto_id in enumerate(productos_ids):
                     producto = Producto.objects.get(id=producto_id)
                     cantidad = int(cantidades[i])
-                    precio = Decimal(precios[i])
-                    descuento_producto = Decimal(descuentos[i]) if i < len(descuentos) else Decimal('0')
+                    precio_base = Decimal(precios[i])
                     
-                    precio_con_descuento = precio - descuento_producto
+                    # CORRECCIÓN: Calcular descuento como porcentaje
+                    porcentaje_descuento = Decimal(descuentos[i]) if i < len(descuentos) and descuentos[i] else Decimal('0')
+                    descuento_producto = precio_base * (porcentaje_descuento / Decimal('100'))
+                    precio_con_descuento = precio_base - descuento_producto
                     
                     # Crear detalle
                     DetalleVenta.objects.create(
@@ -110,10 +117,11 @@ def punto_venta(request):
                     producto.stock -= cantidad
                     producto.save()
                 
-                # Actualizar total de compras del cliente
-                cliente.total_compras += total
-                cliente.ultima_compra = venta.fecha
-                cliente.save()
+                # Actualizar cliente si existe
+                if cliente:
+                    cliente.total_compras += total
+                    cliente.ultima_compra = venta.fecha
+                    cliente.save()
                 
                 messages.success(
                     request,
@@ -121,8 +129,6 @@ def punto_venta(request):
                 )
                 return redirect('ventas:detalle', venta_id=venta.id)
                 
-        except Cliente.DoesNotExist:
-            messages.error(request, 'Cliente no encontrado')
         except Producto.DoesNotExist:
             messages.error(request, 'Producto no encontrado')
         except Exception as e:
@@ -316,10 +322,11 @@ def cancelar_venta(request, venta_id):
                     producto.stock += detalle.cantidad
                     producto.save()
                 
-                # Actualizar cliente
-                cliente = venta.cliente
-                cliente.total_compras -= venta.total
-                cliente.save()
+                # Actualizar cliente si existe
+                if venta.cliente:
+                    cliente = venta.cliente
+                    cliente.total_compras -= venta.total
+                    cliente.save()
                 
                 # Marcar venta como cancelada
                 venta.estado = 'cancelada'
@@ -332,3 +339,21 @@ def cancelar_venta(request, venta_id):
             messages.error(request, f'Error al cancelar la venta: {str(e)}')
     
     return redirect('ventas:detalle', venta_id=venta_id)
+
+
+# ==================== FACTURA/RECIBO ====================
+
+@login_required
+def factura_venta(request, venta_id):
+    """Generar factura/recibo de una venta"""
+    
+    venta = get_object_or_404(
+        Venta.objects.select_related('cliente', 'usuario').prefetch_related('detalles__producto'),
+        id=venta_id
+    )
+    
+    context = {
+        'venta': venta,
+    }
+    
+    return render(request, 'ventas/factura.html', context)

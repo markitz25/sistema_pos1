@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura #{{ venta.id }}</title>
+    <style>
+        body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 10px; }
+        .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+        .header h1 { font-size: 18px; }
+        .info-row { display: flex; justify-content: space-between; margin: 5px 0; }
+        .total-final { font-size: 16px; font-weight: bold; border-top: 2px solid #000; padding-top: 5px; }
+        .footer { text-align: center; margin-top: 20px; border-top: 1px dashed #000; padding-top: 10px; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏪 SISTEMA POS</h1>
+        <p>NIT: 900.123.456-7</p>
+    </div>
+    
+    <div class="info-row">
+        <span>Factura:</span>
+        <strong>#{{ venta.id }}</strong>
+    </div>
+    <div class="info-row">
+        <span>Fecha:</span>
+        <span>{{ venta.fecha|date:"d/m/Y H:i" }}</span>
+    </div>
+    <div class="info-row">
+        <span>Cliente:</span>
+        <strong>{% if venta.cliente %}{{ venta.cliente.nombre }}{% else %}CLIENTE CASUAL{% endif %}</strong>
+    </div>
+    
+    <hr>
+    
+    {% for detalle in venta.detalles.all %}
+    <div>
+        <strong>{{ detalle.producto.nombre }}</strong><br>
+        {{ detalle.cantidad }} x ${{ detalle.precio_unitario|floatformat:0 }} = ${{ detalle.subtotal|floatformat:0 }}
+    </div>
+    {% endfor %}
+    
+    <hr>
+    
+    <div class="info-row">
+        <span>Subtotal:</span>
+        <span>${{ venta.subtotal|floatformat:0 }}</span>
+    </div>
+    {% if venta.descuento > 0 %}
+    <div class="info-row">
+        <span>Descuento:</span>
+        <span>-${{ venta.descuento|floatformat:0 }}</span>
+    </div>
+    {% endif %}
+    <div class="info-row">
+        <span>IVA (19%):</span>
+        <span>${{ venta.impuesto|floatformat:0 }}</span>
+    </div>
+    <div class="info-row total-final">
+        <span>TOTAL:</span>
+        <span>${{ venta.total|floatformat:0 }}</span>
+    </div>
+    
+    <div class="footer">
+        <p>¡Gracias por su compra!</p>
+    </div>
+    
+    <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()">🖨️ Imprimir</button>
+        <button onclick="window.close()">✖️ Cerrar</button>
+    </div>
+</body>
+</html>

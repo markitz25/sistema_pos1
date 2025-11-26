@@ -1,4 +1,3 @@
-# trabajadores/urls.py
 from django.urls import path
 from . import views
 
@@ -11,5 +10,10 @@ urlpatterns = [
     path('editar/<int:trabajador_id>/', views.editar_trabajador, name='editar'),
     path('eliminar/<int:trabajador_id>/', views.eliminar_trabajador, name='eliminar'),
     path('detalle/<int:trabajador_id>/', views.detalle_trabajador, name='detalle'),
-    path('toggle/<int:trabajador_id>/', views.eliminar_trabajador, name='toggle_estado'),
+    
+    # Toggle estado - CORREGIDO
+    path('toggle/<int:trabajador_id>/', views.toggle_estado_trabajador, name='toggle_estado'),
+    
+    path('perfil/', views.mi_perfil, name='mi_perfil'),
+    path('cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
 ]

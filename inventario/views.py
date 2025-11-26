@@ -7,8 +7,19 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
+from django.db import models
 
 from .models import Producto, Categoria
+
+
+# ==================== FUNCIÓN HELPER ====================
+
+def es_admin(user):
+    """Verifica si el usuario es administrador"""
+    try:
+        return user.trabajador.rol == 'admin'
+    except:
+        return False
 
 
 # ==================== GESTIÓN DE PRODUCTOS ====================
@@ -43,6 +54,7 @@ def lista_productos(request):
         'categorias': categorias,
         'query': query,
         'categoria_seleccionada': categoria_id,
+        'es_admin': es_admin(request.user),  # AGREGAR ESTA LÍNEA
     }
     
     return render(request, 'inventario/lista_productos.html', context)
@@ -51,6 +63,11 @@ def lista_productos(request):
 @login_required
 def agregar_producto(request):
     """Agregar nuevo producto"""
+    # Verificar permisos
+    if not es_admin(request.user):
+        messages.error(request, '❌ Solo los administradores pueden realizar esta acción')
+        return redirect('inventario:lista_productos')
+    
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion', '')
@@ -89,6 +106,11 @@ def agregar_producto(request):
 @login_required
 def editar_producto(request, producto_id):
     """Editar producto existente"""
+    # Verificar permisos
+    if not es_admin(request.user):
+        messages.error(request, '❌ Solo los administradores pueden realizar esta acción')
+        return redirect('inventario:lista_productos')
+    
     producto = get_object_or_404(Producto, id=producto_id)
     
     if request.method == 'POST':
@@ -127,6 +149,11 @@ def editar_producto(request, producto_id):
 @login_required
 def eliminar_producto(request, producto_id):
     """Eliminar producto"""
+    # Verificar permisos
+    if not es_admin(request.user):
+        messages.error(request, '❌ Solo los administradores pueden realizar esta acción')
+        return redirect('inventario:lista_productos')
+    
     producto = get_object_or_404(Producto, id=producto_id)
     
     if request.method == 'POST':
@@ -154,7 +181,8 @@ def lista_categorias(request):
     categorias = Categoria.objects.all().order_by('nombre')
     
     context = {
-        'categorias': categorias
+        'categorias': categorias,
+        'es_admin': es_admin(request.user),  # Agregar al contexto
     }
     
     return render(request, 'inventario/lista_categorias.html', context)
@@ -163,6 +191,11 @@ def lista_categorias(request):
 @login_required
 def crear_categoria(request):
     """Crear nueva categoría"""
+    # Verificar permisos
+    if not es_admin(request.user):
+        messages.error(request, '❌ Solo los administradores pueden realizar esta acción')
+        return redirect('inventario:lista_categorias')
+    
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion', '')
@@ -184,6 +217,11 @@ def crear_categoria(request):
 @login_required
 def editar_categoria(request, categoria_id):
     """Editar categoría"""
+    # Verificar permisos
+    if not es_admin(request.user):
+        messages.error(request, '❌ Solo los administradores pueden realizar esta acción')
+        return redirect('inventario:lista_categorias')
+    
     categoria = get_object_or_404(Categoria, id=categoria_id)
     
     if request.method == 'POST':
@@ -208,6 +246,11 @@ def editar_categoria(request, categoria_id):
 @login_required
 def eliminar_categoria(request, categoria_id):
     """Eliminar categoría"""
+    # Verificar permisos
+    if not es_admin(request.user):
+        messages.error(request, '❌ Solo los administradores pueden realizar esta acción')
+        return redirect('inventario:lista_categorias')
+    
     categoria = get_object_or_404(Categoria, id=categoria_id)
     
     if request.method == 'POST':
@@ -242,6 +285,13 @@ def crear_categoria_ajax(request):
     Crear categoría mediante AJAX
     Usado en formularios que tienen un botón de crear categoría rápida
     """
+    # Verificar permisos
+    if not es_admin(request.user):
+        return JsonResponse({
+            'success': False,
+            'error': '❌ Solo los administradores pueden realizar esta acción'
+        })
+    
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         descripcion = request.POST.get('descripcion', '')
@@ -326,6 +376,7 @@ def dashboard_inventario(request):
         'total_categorias': total_categorias,
         'productos_sin_stock': productos_sin_stock,
         'productos_bajo_stock': productos_bajo_stock,
+        'es_admin': es_admin(request.user),  # Agregar al contexto
     }
     
     return render(request, 'inventario/dashboard.html', context)

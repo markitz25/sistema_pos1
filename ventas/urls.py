@@ -1,6 +1,3 @@
-"""
-URLs para el módulo de ventas
-"""
 from django.urls import path
 from . import views
 
@@ -20,4 +17,7 @@ urlpatterns = [
     path('historial/', views.listar_ventas, name='historial'),
     path('detalle/<int:venta_id>/', views.detalle_venta, name='detalle'),
     path('cancelar/<int:venta_id>/', views.cancelar_venta, name='cancelar'),
+    
+    # NUEVA URL - Factura
+    path('factura/<int:venta_id>/', views.factura_venta, name='factura'),
 ]

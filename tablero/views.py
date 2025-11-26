@@ -37,9 +37,28 @@ def dashboard_admin(request):
     """Dashboard completo para administradores"""
     
     # Fecha actual y rangos
-    hoy = timezone.now().date()
+    ahora = timezone.localtime(timezone.now())
+    hoy = ahora.date()
     inicio_mes = hoy.replace(day=1)
     inicio_semana = hoy - timedelta(days=hoy.weekday())
+    
+    # ==================== CORRECCIÓN: VENTAS HOY ====================
+    
+    # Rango correcto para hoy
+    inicio_hoy = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+    fin_hoy = timezone.make_aware(datetime.combine(hoy, datetime.max.time()))
+
+    ventas_hoy = Venta.objects.filter(
+        fecha__gte=inicio_hoy,
+        fecha__lte=fin_hoy,
+        estado='completada'
+    )
+
+    total_ventas_hoy = ventas_hoy.aggregate(
+        total=Sum('total')
+    )['total'] or Decimal('0')
+
+    cantidad_ventas_hoy = ventas_hoy.count()
     
     # ==================== ESTADÍSTICAS GENERALES ====================
     
@@ -65,17 +84,19 @@ def dashboard_admin(request):
         total=Sum('total')
     )['total'] or Decimal('0')
     
-    # Ventas de hoy
-    ventas_hoy = Venta.objects.filter(
-        fecha__date=hoy,
+    # ==================== TRABAJADOR TOP VENDEDOR ====================
+    
+    # Trabajador con más ventas
+    trabajador_top = Venta.objects.filter(
         estado='completada'
-    )
-    
-    total_ventas_hoy = ventas_hoy.aggregate(
-        total=Sum('total')
-    )['total'] or Decimal('0')
-    
-    cantidad_ventas_hoy = ventas_hoy.count()
+    ).values(
+        'usuario__username',
+        'usuario__first_name',
+        'usuario__last_name'
+    ).annotate(
+        total_ventas=Sum('total'),
+        cantidad_ventas=Count('id')
+    ).order_by('-total_ventas').first()
     
     # ==================== PRODUCTOS ====================
     
@@ -141,6 +162,9 @@ def dashboard_admin(request):
         'total_ventas_semana': total_ventas_semana,
         'total_ventas_hoy': total_ventas_hoy,
         'cantidad_ventas_hoy': cantidad_ventas_hoy,
+        
+        # Trabajador top
+        'trabajador_top': trabajador_top,
         
         # Productos
         'total_productos': total_productos,
