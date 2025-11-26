@@ -1,0 +1,440 @@
+SISTEMA DE PUNTO DE VENTA (POS)
+REQUERIMIENTOS DE SOFTWARE
+Desarrollado por: Marco Antonio Saavedra y Emanuel
+
+================================================================================
+1. DESCRIPCIÓN GENERAL DEL SISTEMA
+================================================================================
+
+El Sistema de Punto de Venta (POS) es una solución integral para la gestión
+de ventas, inventario, clientes y reportes en establecimientos comerciales.
+El sistema permite el control completo de operaciones comerciales desde una
+interfaz web centralizada.
+
+================================================================================
+2. OBJETIVOS DEL SISTEMA
+================================================================================
+
+2.1. Objetivo General
+Proporcionar una herramienta completa y eficiente para la gestión de ventas,
+inventario, clientes y generación de reportes en tiempo real, optimizando
+los procesos comerciales y administrativos del negocio.
+
+2.2. Objetivos Específicos
+- Agilizar el proceso de venta mediante interfaz intuitiva de punto de venta
+- Mantener control preciso del inventario de productos
+- Gestionar información detallada de clientes y su historial de compras
+- Generar reportes estadísticos para toma de decisiones
+- Controlar accesos mediante roles de usuario diferenciados
+- Proporcionar métricas visuales del desempeño del negocio
+
+================================================================================
+3. ALCANCE DEL SISTEMA
+================================================================================
+
+3.1. Funcionalidades Incluidas
+- Autenticación y autorización por roles
+- Gestión de trabajadores y perfiles de usuario
+- Gestión completa de clientes
+- Administración de inventario y categorías de productos
+- Procesamiento de ventas en tiempo real
+- Generación de facturas y recibos
+- Sistema de reportes y estadísticas
+- Dashboard interactivo con métricas clave
+- Exportación de datos a Excel
+- Control de stock y alertas de inventario bajo
+- Historial completo de transacciones
+
+3.2. Funcionalidades Excluidas
+- Integración con pasarelas de pago en línea
+- Aplicación móvil nativa
+- Sistema de pedidos en línea
+- Integración con sistemas contables externos
+- Gestión de proveedores
+- Sistema de facturación electrónica
+
+================================================================================
+4. REQUERIMIENTOS FUNCIONALES
+================================================================================
+
+4.1. MÓDULO DE AUTENTICACIÓN
+
+RF01 - Inicio de Sesión
+El sistema debe permitir a los usuarios autenticarse mediante nombre de
+usuario y contraseña. La autenticación debe validar credenciales contra
+la base de datos y establecer una sesión segura.
+
+RF02 - Cierre de Sesión
+El sistema debe permitir a los usuarios cerrar sesión de forma segura,
+eliminando la sesión activa y redirigiendo a la pantalla de inicio de sesión.
+
+RF03 - Gestión de Contraseñas
+El sistema debe permitir a los usuarios cambiar su contraseña proporcionando
+la contraseña actual y la nueva contraseña.
+
+RF04 - Control de Acceso por Roles
+El sistema debe diferenciar entre dos roles: Administrador y Trabajador,
+restringiendo funcionalidades según el rol asignado.
+
+RF05 - Configuración Inicial
+El sistema debe proporcionar un asistente de configuración inicial para
+crear el primer usuario administrador cuando no existan usuarios en el sistema.
+
+4.2. MÓDULO DE TRABAJADORES
+
+RF06 - Registro de Trabajadores
+El sistema debe permitir a los administradores crear nuevos trabajadores
+especificando nombre, apellido, usuario, contraseña, rol, teléfono y dirección.
+
+RF07 - Edición de Trabajadores
+El sistema debe permitir a los administradores modificar información de
+trabajadores existentes.
+
+RF08 - Listado de Trabajadores
+El sistema debe mostrar listado paginado de trabajadores con opciones de
+búsqueda y filtrado.
+
+RF09 - Activación/Desactivación de Trabajadores
+El sistema debe permitir activar o desactivar cuentas de trabajadores sin
+eliminar sus registros permanentemente.
+
+RF10 - Visualización de Perfil
+Los usuarios deben poder ver y editar su información de perfil personal.
+
+4.3. MÓDULO DE CLIENTES
+
+RF11 - Registro de Clientes
+El sistema debe permitir registrar nuevos clientes con nombre, cédula,
+correo, teléfono, dirección y notas adicionales.
+
+RF12 - Validación de Datos de Clientes
+El sistema debe validar que la cédula y correo electrónico sean únicos
+en el sistema.
+
+RF13 - Edición de Clientes
+El sistema debe permitir modificar información de clientes registrados.
+
+RF14 - Búsqueda de Clientes
+El sistema debe proporcionar búsqueda rápida de clientes por nombre,
+cédula o correo electrónico.
+
+RF15 - Estadísticas de Clientes
+El sistema debe calcular y mostrar total de compras, número de compras,
+promedio de compra y última compra de cada cliente.
+
+RF16 - Cliente Casual
+El sistema debe mantener un cliente especial "Casual" para ventas sin
+registro de cliente específico.
+
+RF17 - Activación/Desactivación de Clientes
+El sistema debe permitir activar o desactivar clientes.
+
+4.4. MÓDULO DE INVENTARIO
+
+RF18 - Gestión de Categorías
+El sistema debe permitir crear, editar y listar categorías de productos.
+
+RF19 - Registro de Productos
+El sistema debe permitir registrar productos con nombre, categoría,
+código de barras, precio de compra, precio de venta, stock, stock mínimo,
+descripción e imagen.
+
+RF20 - Edición de Productos
+El sistema debe permitir modificar información de productos existentes.
+
+RF21 - Control de Stock
+El sistema debe actualizar automáticamente el stock al procesar ventas
+y al cancelar ventas.
+
+RF22 - Alertas de Stock Bajo
+El sistema debe identificar y mostrar productos con stock inferior al
+stock mínimo configurado.
+
+RF23 - Búsqueda de Productos
+El sistema debe proporcionar búsqueda de productos por nombre o código
+de barras, con filtrado por categoría.
+
+RF24 - Imágenes de Productos
+El sistema debe permitir cargar y almacenar imágenes de productos.
+
+4.5. MÓDULO DE VENTAS
+
+RF25 - Interfaz de Punto de Venta
+El sistema debe proporcionar interfaz intuitiva para procesar ventas con
+búsqueda de productos, selección de cantidades y cálculo automático de totales.
+
+RF26 - Selección de Cliente
+El sistema debe permitir buscar y seleccionar cliente para la venta o
+usar cliente casual.
+
+RF27 - Cálculo de IVA
+El sistema debe calcular automáticamente el IVA (19%) sobre el subtotal
+de la venta.
+
+RF28 - Aplicación de Descuentos
+El sistema debe permitir aplicar descuentos por producto o a la venta total.
+
+RF29 - Métodos de Pago
+El sistema debe soportar múltiples métodos de pago: efectivo, tarjeta,
+transferencia y pago mixto.
+
+RF30 - Validación de Stock
+El sistema debe validar disponibilidad de stock antes de procesar la venta.
+
+RF31 - Registro de Venta
+El sistema debe guardar todas las ventas con detalle completo de productos,
+cantidades, precios, cliente, vendedor, método de pago y totales.
+
+RF32 - Actualización de Datos del Cliente
+El sistema debe actualizar automáticamente el total de compras y fecha de
+última compra del cliente al completar una venta.
+
+RF33 - Generación de Factura
+El sistema debe generar factura o recibo de la venta completada.
+
+RF34 - Cancelación de Ventas
+El sistema debe permitir a los administradores cancelar ventas, restaurando
+el stock de productos vendidos.
+
+RF35 - Historial de Ventas
+El sistema debe mantener historial completo de ventas con filtros por fecha,
+cliente y método de pago.
+
+RF36 - Detalle de Venta
+El sistema debe mostrar información completa de cada venta incluyendo todos
+los productos, cantidades, precios y totales.
+
+4.6. MÓDULO DE REPORTES Y DASHBOARD
+
+RF37 - Dashboard Diferenciado por Rol
+El sistema debe mostrar dashboard personalizado según el rol del usuario
+con métricas relevantes.
+
+RF38 - Estadísticas de Ventas
+El sistema debe calcular y mostrar total de ventas del día, mes, número de
+ventas y comparativas con períodos anteriores.
+
+RF39 - Productos Más Vendidos
+El sistema debe generar ranking de productos más vendidos por cantidad y
+por ingresos generados.
+
+RF40 - Ventas por Categoría
+El sistema debe agrupar y mostrar ventas por categoría de producto.
+
+RF41 - Top Clientes
+El sistema debe identificar y mostrar clientes con mayor volumen de compras.
+
+RF42 - Gráficos Estadísticos
+El sistema debe generar gráficos de ventas mensuales, productos top y
+ventas por categoría.
+
+RF43 - Alertas Automáticas
+El sistema debe mostrar alertas de productos con stock bajo y días sin ventas.
+
+RF44 - Reporte de Ventas Detallado
+El sistema debe generar reportes de ventas con filtros por rango de fechas
+y método de pago.
+
+RF45 - Reporte de Productos
+El sistema debe generar reporte de productos más vendidos, sin ventas y
+con stock bajo.
+
+RF46 - Exportación a Excel
+El sistema debe permitir exportar reportes de ventas a formato Excel.
+
+================================================================================
+5. REQUERIMIENTOS NO FUNCIONALES
+================================================================================
+
+5.1. RENDIMIENTO
+
+RNF01 - Tiempo de Respuesta
+El sistema debe responder a las acciones del usuario en menos de 2 segundos
+en condiciones normales de operación.
+
+RNF02 - Capacidad de Procesamiento
+El sistema debe ser capaz de procesar al menos 100 ventas simultáneas sin
+degradación significativa del rendimiento.
+
+RNF03 - Carga de Páginas
+Las páginas del sistema deben cargar completamente en menos de 3 segundos
+con conexión estándar a internet.
+
+5.2. SEGURIDAD
+
+RNF04 - Autenticación Obligatoria
+Todas las funcionalidades del sistema requieren autenticación previa del usuario.
+
+RNF05 - Almacenamiento Seguro de Contraseñas
+Las contraseñas deben almacenarse utilizando algoritmos de hash seguros,
+nunca en texto plano.
+
+RNF06 - Control de Sesiones
+El sistema debe implementar control de sesiones con tiempo de expiración
+por inactividad.
+
+RNF07 - Validación de Datos
+Todas las entradas de usuario deben ser validadas tanto en el cliente como
+en el servidor para prevenir inyección de código.
+
+RNF08 - Control de Acceso
+El sistema debe verificar permisos del usuario antes de ejecutar cada
+operación crítica.
+
+5.3. USABILIDAD
+
+RNF09 - Interfaz Intuitiva
+La interfaz debe ser clara, consistente y fácil de usar sin capacitación
+técnica extensa.
+
+RNF10 - Responsive Design
+El sistema debe ser funcional en diferentes tamaños de pantalla y dispositivos.
+
+RNF11 - Mensajes de Error
+El sistema debe mostrar mensajes de error claros y orientados a la solución
+del problema.
+
+RNF12 - Confirmaciones de Acciones
+Las acciones críticas como eliminaciones o cancelaciones deben solicitar
+confirmación del usuario.
+
+5.4. CONFIABILIDAD
+
+RNF13 - Integridad de Datos
+El sistema debe garantizar la integridad de los datos mediante validaciones
+y transacciones atómicas.
+
+RNF14 - Respaldos
+El sistema debe permitir la creación de respaldos completos de la base de datos.
+
+RNF15 - Recuperación de Errores
+El sistema debe manejar errores de forma elegante sin pérdida de datos ni
+interrupciones abruptas.
+
+RNF16 - Trazabilidad
+Todas las operaciones críticas deben ser registradas con usuario, fecha y
+hora para auditoría.
+
+5.5. MANTENIBILIDAD
+
+RNF17 - Código Modular
+El código debe estar organizado en módulos independientes siguiendo principios
+de diseño modular.
+
+RNF18 - Documentación
+El código debe incluir comentarios y documentación técnica clara.
+
+RNF19 - Estándares de Codificación
+El desarrollo debe seguir estándares de codificación establecidos para Python
+y Django.
+
+RNF20 - Escalabilidad
+La arquitectura debe permitir agregar nuevas funcionalidades sin modificar
+extensamente código existente.
+
+5.6. PORTABILIDAD
+
+RNF21 - Independencia de Plataforma
+El sistema debe funcionar en diferentes sistemas operativos (Windows, Linux, macOS).
+
+RNF22 - Compatibilidad de Navegadores
+El sistema debe ser compatible con navegadores modernos: Chrome, Firefox,
+Safari y Edge.
+
+RNF23 - Base de Datos Configurable
+El sistema debe permitir configuración de diferentes motores de base de datos
+mediante archivo de configuración.
+
+================================================================================
+6. RESTRICCIONES TÉCNICAS
+================================================================================
+
+6.1. Tecnologías Obligatorias
+- Framework: Django 4.2.7 o superior
+- Lenguaje: Python 3.8 o superior
+- Frontend: HTML5, CSS3, JavaScript
+- Base de Datos: SQLite (desarrollo), MySQL/PostgreSQL (producción)
+
+6.2. Restricciones de Diseño
+- Arquitectura monolítica modular
+- Patrón MVT (Model-View-Template) de Django
+- Separación de aplicaciones por módulo funcional
+
+6.3. Restricciones de Implementación
+- Uso de ORM de Django para acceso a base de datos
+- Implementación de decoradores para control de acceso
+- Uso de sistema de templates de Django
+
+================================================================================
+7. INTERFACES DEL SISTEMA
+================================================================================
+
+7.1. Interfaces de Usuario
+- Pantalla de inicio de sesión
+- Dashboard principal
+- Interfaz de punto de venta
+- Formularios de gestión de clientes
+- Formularios de gestión de productos
+- Vistas de reportes y estadísticas
+- Pantallas de administración de trabajadores
+
+7.2. Interfaces de Hardware
+- Teclado y mouse/touchpad para entrada de datos
+- Monitor para visualización (resolución mínima 1024x768)
+- Impresora para facturación (opcional)
+
+7.3. Interfaces de Software
+- Navegador web moderno con soporte JavaScript
+- Sistema de archivos para almacenamiento de imágenes
+- Sistema operativo compatible con Python y Django
+
+================================================================================
+8. REQUISITOS DEL SISTEMA
+================================================================================
+
+8.1. Servidor
+- Procesador: 2 GHz o superior
+- Memoria RAM: 2 GB mínimo, 4 GB recomendado
+- Espacio en disco: 1 GB mínimo para aplicación y base de datos
+- Sistema Operativo: Windows Server, Linux o macOS
+- Python 3.8 o superior
+- Acceso a red/internet para clientes
+
+8.2. Cliente
+- Navegador web moderno actualizado
+- Conexión de red al servidor
+- Resolución de pantalla mínima: 1024x768
+- JavaScript habilitado
+
+================================================================================
+9. GLOSARIO DE TÉRMINOS
+================================================================================
+
+- POS: Point of Sale (Punto de Venta)
+- IVA: Impuesto al Valor Agregado
+- CRUD: Create, Read, Update, Delete (Crear, Leer, Actualizar, Eliminar)
+- Dashboard: Panel de control con métricas e indicadores
+- Stock: Cantidad disponible de un producto en inventario
+- SKU: Stock Keeping Unit (Unidad de Mantenimiento de Existencias)
+- Cliente Casual: Cliente genérico para ventas sin registro específico
+- Soft Delete: Desactivación lógica sin eliminación física del registro
+
+================================================================================
+10. CRITERIOS DE ACEPTACIÓN
+================================================================================
+
+10.1. Funcionales
+- Todas las funcionalidades especificadas operan correctamente
+- El sistema procesa ventas de forma precisa y rápida
+- Los reportes reflejan información correcta y actualizada
+- El control de stock se actualiza correctamente en cada venta
+
+10.2. No Funcionales
+- El sistema responde en tiempos aceptables bajo carga normal
+- La interfaz es intuitiva y fácil de usar
+- No se presentan errores críticos durante la operación normal
+- Los datos se mantienen íntegros y consistentes
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

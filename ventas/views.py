@@ -228,7 +228,7 @@ def buscar_productos_ajax(request):
         data.append({
             'id': producto.id,
             'nombre': producto.nombre,
-            'codigo': producto.codigo,
+            'codigo': producto.codigo_barras,
             'precio': float(producto.precio),
             'stock': producto.stock,
             'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',

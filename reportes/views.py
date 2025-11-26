@@ -1,7 +1,7 @@
 """
 Vistas para el módulo de reportes
 """
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count, F, Q, Avg
 from django.http import HttpResponse, JsonResponse
