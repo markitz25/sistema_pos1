@@ -34,6 +34,7 @@
                         <option value="efectivo" {% if metodo_pago == 'efectivo' %}selected{% endif %}>Efectivo</option>
                         <option value="tarjeta" {% if metodo_pago == 'tarjeta' %}selected{% endif %}>Tarjeta</option>
                         <option value="transferencia" {% if metodo_pago == 'transferencia' %}selected{% endif %}>Transferencia</option>
+                        <option value="mixto" {% if metodo_pago == 'mixto' %}selected{% endif %}>Mixto</option>
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
@@ -80,7 +81,7 @@
             <h5 class="mb-0">Ventas por Método de Pago</h5>
         </div>
         <div class="card-body">
-            <canvas id="chartMetodosPago" height="100"></canvas>
+            <canvas id="chartMetodosPago" style="min-height:280px;"></canvas>
         </div>
     </div>
     {% endif %}

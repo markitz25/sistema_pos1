@@ -340,11 +340,19 @@ document.getElementById('btnLimpiarBusqueda').addEventListener('click', function
 
 // ==================== AGREGAR AL CARRITO ====================
 function agregarAlCarrito(id, nombre, precio, stock) {
+    const stockDisponible = parseInt(stock, 10) || 0;
+    const precioUnitario = Number(precio) || 0;
+
+    if (stockDisponible < 1) {
+        alert('Stock insuficiente. No hay unidades disponibles.');
+        return;
+    }
+
     const itemExistente = carrito.find(item => item.producto_id === id);
     
     if (itemExistente) {
-        if (itemExistente.cantidad >= stock) {
-            alert('❌ Stock insuficiente\nDisponible: ' + stock + ' unidades');
+        if (itemExistente.cantidad >= stockDisponible) {
+            alert('Stock insuficiente. Disponible: ' + stockDisponible + ' unidades');
             return;
         }
         itemExistente.cantidad++;
@@ -352,9 +360,9 @@ function agregarAlCarrito(id, nombre, precio, stock) {
         carrito.push({
             producto_id: id,
             nombre: nombre,
-            precio: precio,
+            precio: precioUnitario,
             cantidad: 1,
-            stock: stock,
+            stock: stockDisponible,
             descuento: 0  // Inicializar descuento en 0%
         });
     }
@@ -385,10 +393,10 @@ function actualizarCarrito() {
     const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
     document.getElementById('itemsCarrito').textContent = totalItems;
     
+    const totales = calcularTotalesCarrito();
+
     tbody.innerHTML = carritoVacio.outerHTML + carrito.map((item, index) => {
-        // CORRECTO - Descuento porcentual
-        const descuentoValor = item.precio * (item.descuento / 100);
-        const precioConDescuento = item.precio - descuentoValor;
+        const precioConDescuento = calcularPrecioConDescuento(item);
         const subtotalItem = precioConDescuento * item.cantidad;
         
         return `
@@ -434,25 +442,20 @@ function actualizarCarrito() {
         `;
     }).join('');
     
-    const subtotalCarrito = carrito.reduce((sum, item) => {
-        const descuentoValor = item.precio * (item.descuento / 100);
-        const precioConDescuento = item.precio - descuentoValor;
-        return sum + (precioConDescuento * item.cantidad);
-    }, 0);
-    
-    document.getElementById('footerSubtotal').textContent = '$' + Math.round(subtotalCarrito).toLocaleString('es-CO');
+    document.getElementById('footerSubtotal').textContent = '$' + Math.round(totales.subtotalConDescuento).toLocaleString('es-CO');
     
     actualizarResumen();
 }
 
-// ==================== GESTIÓN DE CANTIDAD ====================
+// ==================== GESTION DE CANTIDAD ====================
 function cambiarCantidad(index, cambio) {
     const item = carrito[index];
-    const nuevaCantidad = item.cantidad + cambio;
+    const maximo = item.stock;
+    const nuevaCantidad = Math.max(1, Math.min(maximo, item.cantidad + cambio));
     
-    if (nuevaCantidad < 1 || nuevaCantidad > item.stock) {
-        if (nuevaCantidad > item.stock) {
-            alert('Stock insuficiente. Disponible: ' + item.stock);
+    if (nuevaCantidad === item.cantidad) {
+        if (item.cantidad >= maximo && cambio > 0) {
+            alert('Stock insuficiente. Disponible: ' + maximo);
         }
         return;
     }
@@ -462,30 +465,35 @@ function cambiarCantidad(index, cambio) {
 }
 
 function actualizarCantidad(index, valor) {
-    const cantidad = parseInt(valor);
     const item = carrito[index];
+    const maximo = item.stock;
+    const cantidad = Math.floor(Number(valor));
     
-    if (cantidad < 1 || cantidad > item.stock || isNaN(cantidad)) {
-        alert('Cantidad inválida. Stock disponible: ' + item.stock);
-        actualizarCarrito();
-        return;
+    if (isNaN(cantidad) || cantidad < 1) {
+        item.cantidad = 1;
+    } else if (cantidad > maximo) {
+        item.cantidad = maximo;
+        alert('Stock insuficiente. Disponible: ' + maximo);
+    } else {
+        item.cantidad = cantidad;
     }
     
-    item.cantidad = cantidad;
     actualizarCarrito();
 }
 
 function cambiarDescuento(index, valor) {
-    const descuento = parseInt(valor);
     const item = carrito[index];
+    const descuento = Math.floor(Number(valor));
     
-    if (descuento < 0 || descuento > 100 || isNaN(descuento)) {
-        alert('Descuento inválido. Debe ser entre 0 y 100%');
-        actualizarCarrito();
-        return;
+    if (isNaN(descuento) || descuento < 0) {
+        item.descuento = 0;
+    } else if (descuento > 100) {
+        item.descuento = 100;
+        alert('El descuento no puede ser mayor a 100%');
+    } else {
+        item.descuento = descuento;
     }
     
-    item.descuento = descuento;
     actualizarCarrito();
 }
 
@@ -504,11 +512,10 @@ document.getElementById('btnVaciar').addEventListener('click', function() {
 
 // ==================== ACTUALIZAR RESUMEN ====================
 function actualizarResumen() {
-    const subtotal = carrito.reduce((sum, item) => {
-        const descuentoValor = item.precio * (item.descuento / 100);
-        const precioConDescuento = item.precio - descuentoValor;
-        return sum + (precioConDescuento * item.cantidad);
-    }, 0);
+    const totales = calcularTotalesCarrito();
+    const subtotal = totales.subtotalConDescuento;
+    const subtotalSinDescuento = totales.subtotalSinDescuento;
+    const ahorro = subtotalSinDescuento - subtotal;
     
     const iva = subtotal * 0.19;
     const total = subtotal + iva;
@@ -516,7 +523,7 @@ function actualizarResumen() {
     
     document.getElementById('resumenSubtotal').textContent = '$' + Math.round(subtotal).toLocaleString('es-CO');
     document.getElementById('resumenIVA').textContent = '$' + Math.round(iva).toLocaleString('es-CO');
-    document.getElementById('resumenDescuento').textContent = '$' + Math.round(subtotal - carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0)).toLocaleString('es-CO');
+    document.getElementById('resumenDescuento').textContent = '$' + Math.round(ahorro).toLocaleString('es-CO');
     document.getElementById('resumenTotal').textContent = '$' + Math.round(total).toLocaleString('es-CO');
     
     // Actualizar cambio si está en efectivo
@@ -618,6 +625,30 @@ function mostrarAtajos() {
           '📋 General:\n' +
           '  • Alt + H: Ver historial\n' +
           '  • Esc: Cancelar venta');
+}
+
+// ==================== HELPERS ====================
+function calcularPrecioConDescuento(item) {
+    const descuento = Math.min(Math.max(item.descuento || 0, 0), 100);
+    const precio = Number(item.precio) || 0;
+    const precioConDescuento = precio * (1 - (descuento / 100));
+    return Math.max(0, precioConDescuento);
+}
+
+function calcularTotalesCarrito() {
+    let subtotalSinDescuento = 0;
+    let subtotalConDescuento = 0;
+
+    carrito.forEach(item => {
+        const precio = Number(item.precio) || 0;
+        const cantidad = Math.max(0, Math.floor(Number(item.cantidad) || 0));
+        const precioDescontado = calcularPrecioConDescuento(item);
+
+        subtotalSinDescuento += precio * cantidad;
+        subtotalConDescuento += precioDescontado * cantidad;
+    });
+
+    return { subtotalSinDescuento, subtotalConDescuento };
 }
 </script>
 {% endblock %}

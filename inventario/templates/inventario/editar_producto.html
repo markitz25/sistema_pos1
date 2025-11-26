@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Producto - Inventario{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-3">
+        <div class="col">
+            <h3 class="mb-1"><i class="fas fa-edit"></i> Editar Producto</h3>
+            <p class="text-muted mb-0">Solo administradores</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" value="{{ producto.nombre }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Categoría</label>
+                        <select name="categoria" class="form-select" required>
+                            {% for cat in categorias %}
+                            <option value="{{ cat.id }}" {% if producto.categoria.id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Precio</label>
+                        <input type="number" name="precio" class="form-control" step="0.01" min="0" value="{{ producto.precio }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Stock</label>
+                        <input type="number" name="stock" class="form-control" min="0" value="{{ producto.stock }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Stock mínimo</label>
+                        <input type="number" name="stock_minimo" class="form-control" min="0" value="{{ producto.stock_minimo|default_if_none:0 }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="3" placeholder="Opcional">{{ producto.descripcion }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Imagen (opcional)</label>
+                        <input type="file" name="imagen" class="form-control">
+                        {% if producto.imagen %}
+                        <small class="text-muted d-block mt-1">Actual: <a href="{{ producto.imagen.url }}" target="_blank">Ver imagen</a></small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

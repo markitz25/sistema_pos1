@@ -17,11 +17,6 @@
             <a href="{% url 'ventas:factura' venta.id %}" class="btn btn-success" target="_blank">
                 <i class="fas fa-print"></i> Imprimir
             </a>
-            {% if venta.estado == 'completada' %}
-            <a href="{% url 'ventas:cancelar' venta.id %}" class="btn btn-danger">
-                <i class="fas fa-ban"></i> Cancelar
-            </a>
-            {% endif %}
         </div>
     </div>
 

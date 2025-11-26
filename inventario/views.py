@@ -178,10 +178,15 @@ def eliminar_producto(request, producto_id):
 @login_required
 def lista_categorias(request):
     """Lista de categorías"""
-    categorias = Categoria.objects.all().order_by('nombre')
+    query = request.GET.get('q', '').strip()
+    categorias = Categoria.objects.all()
+    if query:
+        categorias = categorias.filter(nombre__icontains=query)
+    categorias = categorias.order_by('nombre')
     
     context = {
         'categorias': categorias,
+        'query': query,
         'es_admin': es_admin(request.user),  # Agregar al contexto
     }
     
@@ -216,32 +221,45 @@ def crear_categoria(request):
 
 @login_required
 def editar_categoria(request, categoria_id):
-    """Editar categoría"""
-    # Verificar permisos
+    """Editar categoria y mover productos entre categorias (solo admin)"""
     if not es_admin(request.user):
-        messages.error(request, '❌ Solo los administradores pueden realizar esta acción')
+        messages.error(request, 'Solo los administradores pueden realizar esta accion')
         return redirect('inventario:lista_categorias')
-    
+
     categoria = get_object_or_404(Categoria, id=categoria_id)
-    
+    otras_categorias = Categoria.objects.exclude(id=categoria_id).order_by('nombre')
+    productos_categoria = categoria.producto_set.select_related('categoria').order_by('nombre')
+
     if request.method == 'POST':
+        if request.POST.get('producto_id') and request.POST.get('nueva_categoria'):
+            producto_id = request.POST.get('producto_id')
+            nueva_categoria_id = request.POST.get('nueva_categoria')
+            try:
+                producto = Producto.objects.get(id=producto_id, categoria=categoria)
+                producto.categoria_id = nueva_categoria_id
+                producto.save()
+                messages.success(request, f'Producto "{producto.nombre}" movido de {categoria.nombre} a {producto.categoria.nombre}.')
+            except Producto.DoesNotExist:
+                messages.error(request, 'Producto no encontrado en esta categoria.')
+            return redirect('inventario:editar_categoria', categoria_id=categoria_id)
+
         categoria.nombre = request.POST.get('nombre')
         categoria.descripcion = request.POST.get('descripcion', '')
-        
+
         try:
             categoria.save()
-            messages.success(request, f'✅ Categoría "{categoria.nombre}" actualizada exitosamente')
+            messages.success(request, f'Categoria "{categoria.nombre}" actualizada exitosamente')
             return redirect('inventario:lista_categorias')
-            
         except Exception as e:
-            messages.error(request, f'❌ Error al actualizar categoría: {str(e)}')
-    
-    context = {
-        'categoria': categoria
-    }
-    
-    return render(request, 'inventario/editar_categoria.html', context)
+            messages.error(request, f'Error al actualizar categoria: {str(e)}')
 
+    context = {
+        'categoria': categoria,
+        'otras_categorias': otras_categorias,
+        'productos_categoria': productos_categoria,
+    }
+
+    return render(request, 'inventario/editar_categoria.html', context)
 
 @login_required
 def eliminar_categoria(request, categoria_id):

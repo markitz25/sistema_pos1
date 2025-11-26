@@ -102,10 +102,18 @@ def reporte_ventas(request):
     promedio_venta = ventas.aggregate(promedio=Avg('total'))['promedio'] or Decimal('0')
     
     # Ventas por método de pago
-    ventas_por_metodo = ventas.values('metodo_pago').annotate(
+    ventas_por_metodo_qs = ventas.values('metodo_pago').annotate(
         total=Sum('total'),
         cantidad=Count('id')
     ).order_by('-total')
+    ventas_por_metodo = []
+    display_map = dict(Venta.METODOS_PAGO)
+    for v in ventas_por_metodo_qs:
+        ventas_por_metodo.append({
+            'metodo': display_map.get(v['metodo_pago'], v['metodo_pago']),
+            'total': float(v['total'] or 0),
+            'cantidad': v['cantidad'],
+        })
     
     # Últimas ventas
     ventas_recientes = ventas.select_related(
@@ -140,9 +148,20 @@ def reporte_productos(request):
         'producto__categoria__nombre',
         'producto__precio'
     ).annotate(
-        cantidad_vendida=Sum('cantidad'),
-        ingresos_generados=Sum(F('cantidad') * F('precio_unitario'))
-    ).order_by('-cantidad_vendida')[:20]
+        total_cantidad=Sum('cantidad'),
+        total_ingresos=Sum(F('cantidad') * F('precio_unitario'))
+    ).order_by('-total_cantidad')[:20]
+
+    # Métricas
+    total_productos = Producto.objects.count()
+    productos_vendidos_count = productos_vendidos.count()
+    total_unidades = productos_vendidos.aggregate(total=Sum('total_cantidad'))['total'] or 0
+    total_ingresos = productos_vendidos.aggregate(total=Sum('total_ingresos'))['total'] or 0
+    productos_top = list(productos_vendidos[:10])
+    productos_sin_ventas_qs = Producto.objects.exclude(
+        ventas_detalle__venta__estado='completada'
+    ).select_related('categoria').order_by('nombre')
+    productos_sin_ventas = productos_sin_ventas_qs.count()
     
     # Productos con stock bajo
     productos_stock_bajo = Producto.objects.filter(
@@ -161,8 +180,15 @@ def reporte_productos(request):
     
     context = {
         'productos_vendidos': productos_vendidos,
+        'productos_top': productos_top,
         'productos_stock_bajo': productos_stock_bajo,
         'ventas_por_categoria': ventas_por_categoria,
+        'total_productos': total_productos,
+        'productos_vendidos_count': productos_vendidos_count,
+        'total_unidades': total_unidades,
+        'total_ingresos': total_ingresos,
+        'productos_sin_ventas': productos_sin_ventas,
+        'productos_sin_ventas_lista': productos_sin_ventas_qs,
     }
     
     return render(request, 'reportes/productos.html', context)
@@ -185,7 +211,7 @@ def reporte_clientes(request):
     inicio_mes = hoy.replace(day=1)
     
     clientes_nuevos = Cliente.objects.filter(
-        creado_en__gte=inicio_mes
+        fecha_registro__gte=inicio_mes
     ).count()
     
     # Estadísticas generales

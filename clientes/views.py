@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db import models
+from django.db.models import Q, Count, Value, Max, Sum, F
+from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.utils import timezone
-from django.db.models import Sum  # <-- Importación necesaria
-from decimal import Decimal      # <-- Importación necesaria
+from decimal import Decimal
 from .models import Cliente
 from .forms import ClienteForm, BuscarClienteForm
 
@@ -16,41 +17,65 @@ def listar_clientes(request):
     """
     Lista todos los clientes - VERSIÓN ESTABLE Y FUNCIONAL
     """
-    # Obtener clientes con orden por defecto
-    clientes = Cliente.objects.all().order_by('-fecha_registro')
+    form_busqueda = BuscarClienteForm(request.GET or None)
+
+    # Base queryset con agregados de compras
+    clientes = Cliente.objects.all().annotate(
+        num_compras=Count('ventas', filter=Q(ventas__estado='completada'), distinct=True),
+        total_gastado=Coalesce(
+            Sum('ventas__total', filter=Q(ventas__estado='completada')),
+            F('total_compras'),
+            Value(0),
+            output_field=models.DecimalField(max_digits=12, decimal_places=2)
+        )
+    )
     
-    # Búsqueda simple por parámetro GET
-    query = request.GET.get('q', '')
-    if query:
+    # Búsqueda
+    busqueda = form_busqueda['busqueda'].data if form_busqueda.is_bound else ''
+    if busqueda:
         clientes = clientes.filter(
-            Q(nombre__icontains=query) |
-            Q(cedula__icontains=query) |
-            Q(telefono__icontains=query) |
-            Q(correo__icontains=query)
+            Q(nombre__icontains=busqueda) |
+            Q(cedula__icontains=busqueda) |
+            Q(telefono__icontains=busqueda) |
+            Q(correo__icontains=busqueda)
         )
     
     # Filtro por estado
-    estado = request.GET.get('estado', '')
+    estado = form_busqueda['estado'].data if form_busqueda.is_bound else ''
     if estado == 'activos':
         clientes = clientes.filter(activo=True)
     elif estado == 'inactivos':
         clientes = clientes.filter(activo=False)
+
+    # Orden
+    ordenar = form_busqueda['ordenar'].data if form_busqueda.is_bound else ''
+    orden_valido = ordenar or '-fecha_registro'
+    clientes = clientes.order_by(orden_valido)
     
-    # Estadísticas básicas y SEGURAS
+    # Estadísticas
     total_clientes = clientes.count()
     clientes_activos = clientes.filter(activo=True).count()
+    clientes_frecuentes = clientes.filter(num_compras__gte=3).count()
     
     # Paginación
     paginator = Paginator(clientes, 10)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
+
+    # Flag de admin/trabajador
+    try:
+        es_admin = request.user.trabajador.rol == 'admin'
+    except Exception:
+        es_admin = False
     
     context = {
         'clientes': page_obj,
         'total_clientes': total_clientes,
         'clientes_activos': clientes_activos,
-        'clientes_frecuentes': 0,  # Valor seguro por ahora
-        'query': query,  # Para mostrar en template
+        'clientes_frecuentes': clientes_frecuentes,
+        'query': busqueda,
+        'form_busqueda': form_busqueda,
+        'es_admin': es_admin,
     }
     
     return render(request, 'clientes/listar.html', context)
@@ -103,6 +128,13 @@ def editar_cliente(request, cliente_id):
     Edita los datos de un cliente existente
     """
     cliente = get_object_or_404(Cliente, pk=cliente_id)
+    try:
+        es_admin = request.user.trabajador.rol == 'admin'
+    except Exception:
+        es_admin = False
+    if cliente.cedula == 'CASUAL' and not es_admin:
+        messages.error(request, 'No tienes permisos para modificar el cliente casual.')
+        return redirect('clientes:listar')
     
     if request.method == 'POST':
         form = ClienteForm(request.POST, instance=cliente)
@@ -129,6 +161,13 @@ def eliminar_cliente(request, cliente_id):
     Elimina (desactiva) un cliente del sistema
     """
     cliente = get_object_or_404(Cliente, pk=cliente_id)
+    try:
+        es_admin = request.user.trabajador.rol == 'admin'
+    except Exception:
+        es_admin = False
+    if cliente.cedula == 'CASUAL' and not es_admin:
+        messages.error(request, 'No tienes permisos para modificar el cliente casual.')
+        return redirect('clientes:listar')
     
     if request.method == 'POST':
         cliente.activo = False
@@ -145,6 +184,13 @@ def toggle_estado_cliente(request, cliente_id):
     Activa o desactiva un cliente
     """
     cliente = get_object_or_404(Cliente, pk=cliente_id)
+    try:
+        es_admin = request.user.trabajador.rol == 'admin'
+    except Exception:
+        es_admin = False
+    if cliente.cedula == 'CASUAL' and not es_admin:
+        messages.error(request, 'No tienes permisos para modificar el cliente casual.')
+        return redirect('clientes:listar')
     cliente.activo = not cliente.activo
     cliente.save()
     
@@ -187,20 +233,33 @@ def estadisticas_clientes(request):
     """
     Muestra estadísticas generales de los clientes
     """
-    total_clientes = Cliente.objects.count()
-    clientes_activos = Cliente.objects.filter(activo=True).count()
-    
-    # Clientes nuevos este mes
+    clientes = Cliente.objects.annotate(
+        num_compras=Count('ventas', filter=Q(ventas__estado='completada'), distinct=True),
+        total_gastado=Coalesce(
+            Sum('ventas__total', filter=Q(ventas__estado='completada')),
+            F('total_compras'),
+            Value(0),
+            output_field=models.DecimalField(max_digits=12, decimal_places=2)
+        ),
+        ultima_compra_fecha=Max('ventas__fecha', filter=Q(ventas__estado='completada'))
+    )
+
+    total_clientes = clientes.count()
+    clientes_activos = clientes.filter(activo=True).count()
     inicio_mes = timezone.now().replace(day=1, hour=0, minute=0, second=0)
-    clientes_nuevos_mes = Cliente.objects.filter(
-        fecha_registro__gte=inicio_mes
-    ).count()
-    
+    clientes_nuevos_mes = clientes.filter(fecha_registro__gte=inicio_mes).count()
+    total_compras = clientes.aggregate(total=Sum('total_gastado'))['total'] or Decimal('0')
+    promedio_compra = total_compras / clientes_activos if clientes_activos else Decimal('0')
+    top_clientes = clientes.filter(activo=True).order_by('-total_gastado')[:20]
+
     context = {
         'total_clientes': total_clientes,
         'clientes_activos': clientes_activos,
         'clientes_inactivos': total_clientes - clientes_activos,
         'clientes_nuevos_mes': clientes_nuevos_mes,
+        'total_compras': total_compras,
+        'promedio_compra': promedio_compra,
+        'top_clientes': top_clientes,
     }
     
     return render(request, 'clientes/estadisticas.html', context)
@@ -211,24 +270,23 @@ def estadisticas_clientes_detalladas(request):
     """Estadísticas generales de clientes"""
     
     # Total clientes
-    total_clientes = Cliente.objects.count()
-    clientes_activos = Cliente.objects.filter(activo=True).count()
+    clientes = Cliente.objects.annotate(
+        num_compras=Count('ventas', filter=Q(ventas__estado='completada'), distinct=True),
+        total_gastado=Coalesce(
+            Sum('ventas__total', filter=Q(ventas__estado='completada')),
+            F('total_compras'),
+            Value(0),
+            output_field=models.DecimalField(max_digits=12, decimal_places=2)
+        ),
+        ultima_compra=Max('ventas__fecha', filter=Q(ventas__estado='completada'))
+    )
+    total_clientes = clientes.count()
+    clientes_activos = clientes.filter(activo=True).count()
     
-    # Total compras
-    total_compras = Cliente.objects.aggregate(
-        total=Sum('total_compras')
-    )['total'] or Decimal('0')
+    total_compras = clientes.aggregate(total=Sum('total_gastado'))['total'] or Decimal('0')
+    promedio_compra = total_compras / clientes_activos if clientes_activos else Decimal('0')
     
-    # Promedio de compra
-    if clientes_activos > 0:
-        promedio_compra = total_compras / clientes_activos
-    else:
-        promedio_compra = Decimal('0')
-    
-    # Top 20 clientes
-    top_clientes = Cliente.objects.filter(
-        activo=True
-    ).order_by('-total_compras')[:20]
+    top_clientes = clientes.filter(activo=True).order_by('-total_gastado')[:20]
     
     context = {
         'total_clientes': total_clientes,

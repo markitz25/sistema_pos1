@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicializar Sistema POS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --purple-1: #a855f7;
+            --purple-2: #6d28d9;
+            --pink: #ec4899;
+            --bg: linear-gradient(135deg, #a855f7 0%, #6d28d9 50%, #ec4899 100%);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .setup-card {
+            background: #fdf8ff;
+            border-radius: 28px;
+            max-width: 520px;
+            width: 100%;
+            padding: 32px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        .setup-card::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            background: var(--bg);
+            filter: blur(40px);
+            opacity: 0.25;
+            z-index: 0;
+        }
+        .card-content { position: relative; z-index: 1; }
+        .icon-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple-1), var(--purple-2));
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-size: 28px;
+            margin: 0 auto 18px;
+            box-shadow: 0 12px 30px rgba(109, 40, 217, 0.35);
+        }
+        h1 {
+            text-align: center;
+            font-weight: 800;
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        p.lead {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 24px;
+            font-size: 15px;
+        }
+        label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px 14px;
+            transition: all 0.2s ease;
+            background: #fff;
+        }
+        .form-control:focus {
+            border-color: var(--purple-1);
+            box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.2);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple-1), var(--pink));
+            border: none;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            box-shadow: 0 12px 24px rgba(168, 85, 247, 0.35);
+        }
+        .alert {
+            border: none;
+            border-radius: 12px;
+        }
+        .badge-tip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(168, 85, 247, 0.12);
+            color: #5b21b6;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 12px;
+            margin: 0 auto 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-card">
+        <div class="card-content">
+            <div class="icon-circle">
+                <i class="fas fa-cart-arrow-down"></i>
+            </div>
+            <div class="badge-tip">
+                <i class="fas fa-sparkles"></i> Primer uso
+            </div>
+            <h1>Inicialización del Sistema</h1>
+            <p class="lead">Registra la cuenta de administrador para comenzar.</p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="full_name">Nombre Completo</label>
+                    <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Ingrese su nombre" value="{{ full_name|default:'' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="admin@empresa.com" value="{{ email|default:'' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+                </div>
+                <div class="mb-4">
+                    <label for="password_confirm">Confirmar Contraseña</label>
+                    <input type="password" class="form-control" id="password_confirm" name="password_confirm" placeholder="Confirme su contraseña" minlength="6" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-user-shield me-2"></i>
+                    Crear Administrador
+                </button>
+                <div class="text-center mt-3 text-muted" style="font-size: 12px;">
+                    Este paso solo aparece cuando la base está vacía.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

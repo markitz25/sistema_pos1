@@ -91,7 +91,7 @@
                 </div>
                 <div class="col-md-1">
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i>
+                        <i class="bi bi-search"></i> Filtrar
                     </button>
                 </div>
             </form>
@@ -143,12 +143,12 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-info">
-                                        {{ cliente.get_numero_compras }} compras
+                                        {{ cliente.num_compras|default:0 }} compras
                                     </span>
                                 </td>
                                 <td>
                                     <strong class="text-success">
-                                        ${{ cliente.total_compras|floatformat:2 }}
+                                        ${{ cliente.total_gastado|default:cliente.total_compras|floatformat:2 }}
                                     </strong>
                                 </td>
                                 <td>
@@ -165,25 +165,29 @@
            title="Visualizar">
             <i class="fas fa-eye"></i> Ver
         </a>
-        <a href="{% url 'clientes:editar' cliente.id %}" 
-           class="btn btn-sm btn-warning" 
-           title="Editar">
-            <i class="fas fa-edit"></i> Editar
-        </a>
-        {% if cliente.activo %}
-        <a href="{% url 'clientes:toggle' cliente.id %}" 
-           class="btn btn-sm btn-secondary" 
-           title="Desactivar"
-           onclick="return confirm('¿Desactivar este cliente?')">
-            <i class="fas fa-ban"></i> Desactivar
-        </a>
+        {% if es_admin or cliente.cedula != 'CASUAL' %}
+            <a href="{% url 'clientes:editar' cliente.id %}" 
+               class="btn btn-sm btn-warning" 
+               title="Editar">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            {% if cliente.activo %}
+            <a href="{% url 'clientes:toggle' cliente.id %}" 
+               class="btn btn-sm btn-secondary" 
+               title="Desactivar"
+               onclick="return confirm('¿Desactivar este cliente?')">
+                <i class="fas fa-ban"></i> Desactivar
+            </a>
+            {% else %}
+            <a href="{% url 'clientes:toggle' cliente.id %}" 
+               class="btn btn-sm btn-success" 
+               title="Activar"
+               onclick="return confirm('¿Activar este cliente?')">
+                <i class="fas fa-check"></i> Activar
+            </a>
+            {% endif %}
         {% else %}
-        <a href="{% url 'clientes:toggle' cliente.id %}" 
-           class="btn btn-sm btn-success" 
-           title="Activar"
-           onclick="return confirm('¿Activar este cliente?')">
-            <i class="fas fa-check"></i> Activar
-        </a>
+            <span class="badge bg-secondary">Cliente protegido</span>
         {% endif %}
     </div>
 </td>

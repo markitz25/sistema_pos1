@@ -101,9 +101,7 @@ class Cliente(models.Model):
     
     def get_numero_compras(self):
         """Retorna el número total de compras realizadas"""
-        # TODO: Implementar cuando tengamos el módulo de ventas
-        # return self.ventas.count()
-        return 0  # Por ahora retorna 0
+        return self.ventas.count()
     
     def get_ultima_compra_fecha(self):
         """Retorna la fecha de la última compra formateada"""

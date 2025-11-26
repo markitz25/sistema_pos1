@@ -56,14 +56,12 @@
                                     </label>
                                     <select class="form-select" id="categoria" name="categoria" required>
                                         <option value="">Seleccionar categoría...</option>
-                                        <option value="1">Electrónica</option>
-                                        <option value="2">Alimentos</option>
-                                        <option value="3">Ropa</option>
-                                        <option value="4">Hogar</option>
-                                        <option value="5">Otros</option>
+                                        {% for categoria in categorias %}
+                                        <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                                        {% endfor %}
                                     </select>
                                     <small class="text-muted">
-                                        <a href="#" class="text-decoration-none">+ Crear nueva categoría</a>
+                                        <a href="{% url 'inventario:crear_categoria' %}" class="text-decoration-none">+ Crear nueva categoría</a>
                                     </small>
                                 </div>
 

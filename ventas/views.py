@@ -28,6 +28,20 @@ def dashboard(request):
 def punto_venta(request):
     """Vista principal del punto de venta con categorías"""
     
+    def obtener_cliente_casual():
+        """Devuelve o crea el cliente casual por defecto."""
+        cliente_casual, _ = Cliente.objects.get_or_create(
+            cedula='CASUAL',
+            defaults={
+                'nombre': 'Cliente Casual',
+                'correo': None,
+                'telefono': '0000000000',
+                'direccion': 'Cliente no registrado',
+                'activo': True,
+            }
+        )
+        return cliente_casual
+
     if request.method == 'POST':
         try:
             with transaction.atomic():
@@ -38,6 +52,9 @@ def punto_venta(request):
                 precios = request.POST.getlist('precio[]')
                 descuentos = request.POST.getlist('descuento[]')  # NUEVO: descuento por producto
                 metodo_pago = request.POST.get('metodo_pago', 'efectivo')
+                monto_efectivo = request.POST.get('monto_efectivo')
+                monto_otro = request.POST.get('monto_otro')
+                metodo_mixto = request.POST.get('metodo_mixto')
                 
                 # Validaciones
                 if not productos_ids:
@@ -51,6 +68,8 @@ def punto_venta(request):
                         cliente = Cliente.objects.get(id=cliente_id)
                     except Cliente.DoesNotExist:
                         pass
+                if cliente is None:
+                    cliente = obtener_cliente_casual()
                 
                 # Calcular totales con descuento por producto
                 subtotal = Decimal('0')
@@ -80,6 +99,34 @@ def punto_venta(request):
                 # Calcular IVA sobre el subtotal YA con descuento
                 impuesto = subtotal * Decimal('0.19')
                 total = subtotal + impuesto
+
+                # Validar montos según método de pago
+                if metodo_pago == 'efectivo':
+                    try:
+                        monto_ingresado = Decimal(monto_efectivo)
+                    except Exception:
+                        messages.error(request, 'Monto en efectivo inválido.')
+                        return redirect('ventas:punto_venta')
+                    if monto_ingresado < total:
+                        messages.error(request, 'El monto en efectivo no cubre el total.')
+                        return redirect('ventas:punto_venta')
+                    nota_pago = f'Efectivo recibido: ${monto_ingresado:,.0f}'
+                elif metodo_pago == 'mixto':
+                    try:
+                        monto_ef = Decimal(monto_efectivo or '0')
+                        monto_ot = Decimal(monto_otro or '0')
+                    except Exception:
+                        messages.error(request, 'Montos inválidos para pago mixto.')
+                        return redirect('ventas:punto_venta')
+                    if metodo_mixto not in ('tarjeta', 'transferencia'):
+                        messages.error(request, 'Método adicional inválido.')
+                        return redirect('ventas:punto_venta')
+                    if monto_ef < 0 or monto_ot < 0 or (monto_ef + monto_ot) < total:
+                        messages.error(request, 'Los montos mixtos no cubren el total.')
+                        return redirect('ventas:punto_venta')
+                    nota_pago = f'Pago mixto: efectivo ${monto_ef:,.0f} + {metodo_mixto} ${monto_ot:,.0f}'
+                else:
+                    nota_pago = ''
                 
                 # Crear venta (descuento = 0 porque ya se aplicó por producto)
                 venta = Venta.objects.create(
@@ -90,7 +137,8 @@ def punto_venta(request):
                     descuento=Decimal('0'),  # Ya aplicado por producto
                     total=total,
                     metodo_pago=metodo_pago,
-                    estado='completada'
+                    estado='completada',
+                    notas=nota_pago
                 )
                 
                 # Crear detalles con precios con descuento
@@ -119,7 +167,8 @@ def punto_venta(request):
                 
                 # Actualizar cliente si existe
                 if cliente:
-                    cliente.total_compras += total
+                    total_actual = Decimal(str(cliente.total_compras or '0'))
+                    cliente.total_compras = total_actual + total
                     cliente.ultima_compra = venta.fecha
                     cliente.save()
                 
@@ -201,7 +250,7 @@ def listar_ventas(request):
     except:
         es_admin = False
     
-    # Filtros
+    # Filtros base segun rol
     if es_admin:
         ventas = Venta.objects.all()
     else:
@@ -213,6 +262,7 @@ def listar_ventas(request):
     fecha_inicio = request.GET.get('fecha_inicio')
     fecha_fin = request.GET.get('fecha_fin')
     estado = request.GET.get('estado')
+    busqueda = request.GET.get('busqueda', '').strip()
     
     if cliente_id:
         ventas = ventas.filter(cliente_id=cliente_id)
@@ -225,6 +275,17 @@ def listar_ventas(request):
     
     if estado:
         ventas = ventas.filter(estado=estado)
+
+    # Busqueda por texto
+    if busqueda:
+        filtros_busqueda = (
+            Q(cliente__nombre__icontains=busqueda) |
+            Q(cliente__cedula__icontains=busqueda) |
+            Q(usuario__username__icontains=busqueda)
+        )
+        if busqueda.isdigit():
+            filtros_busqueda |= Q(id=int(busqueda))
+        ventas = ventas.filter(filtros_busqueda)
     
     # Ordenar y optimizar consultas
     ventas = ventas.select_related(
@@ -252,6 +313,7 @@ def listar_ventas(request):
         
         # Mantener filtros
         'cliente_id': cliente_id,
+        'busqueda': busqueda,
         'fecha_inicio': fecha_inicio,
         'fecha_fin': fecha_fin,
         'estado': estado,
@@ -267,7 +329,7 @@ def detalle_venta(request, venta_id):
     """Ver detalle completo de una venta"""
     
     venta = get_object_or_404(
-        Venta.objects.select_related('cliente', 'usuario').prefetch_related('detalles__producto'),
+        Venta.objects.select_related('cliente', 'usuario').prefetch_related('detalles__producto__categoria'),
         id=venta_id
     )
     
@@ -285,6 +347,7 @@ def detalle_venta(request, venta_id):
     
     context = {
         'venta': venta,
+        'detalles': venta.detalles.all(),
         'es_admin': es_admin,
     }
     
@@ -348,12 +411,13 @@ def factura_venta(request, venta_id):
     """Generar factura/recibo de una venta"""
     
     venta = get_object_or_404(
-        Venta.objects.select_related('cliente', 'usuario').prefetch_related('detalles__producto'),
+        Venta.objects.select_related('cliente', 'usuario').prefetch_related('detalles__producto__categoria'),
         id=venta_id
     )
     
     context = {
         'venta': venta,
+        'detalles': venta.detalles.all(),
     }
     
     return render(request, 'ventas/factura.html', context)
