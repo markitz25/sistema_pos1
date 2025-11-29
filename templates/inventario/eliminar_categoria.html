@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar categoría - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Eliminar categoría</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Estás a punto de eliminar la categoría <strong>{{ categoria.nombre }}</strong>.
+                        {% if categoria.descripcion %}<br>{{ categoria.descripcion }}{% endif %}
+                    </p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        Esta acción no se puede deshacer. No puedes eliminar categorías con productos asociados.
+                    </div>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Productos asociados
+                            <span class="badge bg-info text-dark">{{ categoria.producto_set.count }}</span>
+                        </li>
+                    </ul>
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <a href="{% url 'inventario:lista_categorias' %}" class="btn btn-outline-secondary w-50">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger w-50" {% if categoria.producto_set.count > 0 %}disabled{% endif %}>
+                            <i class="fas fa-trash"></i> Eliminar categoría
+                        </button>
+                    </form>
+                    {% if categoria.producto_set.count > 0 %}
+                    <p class="text-muted small mt-3 mb-0">
+                        Reasigna o elimina los productos de esta categoría antes de eliminarla.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

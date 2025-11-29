@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Categorias - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header y filtros -->
+    <div class="row mb-4 align-items-end">
+        <div class="col">
+            <h2><i class="fas fa-tags"></i> Gestion de Categorias</h2>
+            <p class="text-muted">Administra las categorias de productos</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Volver a Productos
+            </a>
+            <a href="{% url 'inventario:crear_categoria' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva Categoria
+            </a>
+        </div>
+    </div>
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <label class="form-label text-muted mb-1">Buscar categoria</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Nombre..." value="{{ query|default:'' }}">
+            </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <a href="{% url 'inventario:lista_categorias' %}" class="btn btn-outline-secondary w-100">Limpiar</a>
+        </div>
+    </form>
+
+    <!-- Estadisticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Categorias</h6>
+                            <h3 class="mb-0">{{ categorias.count }}</h3>
+                        </div>
+                        <i class="fas fa-tags fa-3x text-primary opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Categorias -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Lista de Categorias</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if categorias %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="10%">ID</th>
+                            <th width="25%">Nombre</th>
+                            <th width="45%">Descripcion</th>
+                            <th width="10%" class="text-center">Productos</th>
+                            <th width="10%" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categoria in categorias %}
+                        <tr>
+                            <td><strong class="text-primary">#{{ categoria.id }}</strong></td>
+                            <td>
+                                <strong>{{ categoria.nombre }}</strong>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ categoria.descripcion|default:"Sin descripcion"|truncatewords:15 }}
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info">
+                                    {{ categoria.producto_set.count }} productos
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'inventario:editar_categoria' categoria.id %}" 
+                                       class="btn btn-outline-warning"
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'inventario:eliminar_categoria' categoria.id %}" 
+                                       class="btn btn-outline-danger"
+                                       title="Eliminar"
+                                       onclick="return confirm('¿Estás seguro de eliminar esta categoria?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Estado vacío -->
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-4x text-muted mb-3 opacity-25"></i>
+                <h4 class="text-muted">No hay categorias registradas</h4>
+                <p class="text-muted mb-4">Comienza creando tu primera categoria</p>
+                <a href="{% url 'inventario:crear_categoria' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Crear Primera Categoria
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Informacion adicional -->
+    {% if categorias %}
+    <div class="alert alert-info mt-4">
+        <i class="fas fa-info-circle"></i>
+        <strong>Nota:</strong> No puedes eliminar una categoria que tenga productos asignados. 
+        Primero debes reasignar o eliminar los productos asociados.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

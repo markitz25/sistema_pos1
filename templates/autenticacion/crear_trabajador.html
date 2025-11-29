@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Trabajador - Sistema POS{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <span class="navbar-brand">
+            <i class="fas fa-user-plus"></i> Crear Trabajador
+        </span>
+        <div class="d-flex">
+            <a href="{% url 'tablero:inicio' %}" class="btn btn-outline-light btn-sm me-2">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="{% url 'autenticacion:logout' %}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-plus"></i> Nuevo Trabajador
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">
+                                        Nombre de Usuario <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        Correo Electrónico <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        Contraseña <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" class="form-control" id="password" name="password" minlength="6" required>
+                                    <small class="text-muted">Mínimo 6 caracteres</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">
+                                        Nombre <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">
+                                        Apellido <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="telefono" class="form-label">
+                                        Teléfono
+                                    </label>
+                                    <input type="text" class="form-control" id="telefono" name="telefono">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="direccion" class="form-label">
+                                        Dirección
+                                    </label>
+                                    <input type="text" class="form-control" id="direccion" name="direccion">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                Los campos con <span class="text-danger">*</span> son obligatorios
+                            </small>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'tablero:inicio' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Crear Trabajador
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de trabajadores existentes -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i> Trabajadores Registrados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if trabajadores %}
+                                    {% for trabajador in trabajadores %}
+                                    <tr>
+                                        <td>{{ trabajador.usuario.username }}</td>
+                                        <td>{{ trabajador.usuario.first_name }} {{ trabajador.usuario.last_name }}</td>
+                                        <td>{{ trabajador.usuario.email }}</td>
+                                        <td>{{ trabajador.telefono|default:"--" }}</td>
+                                        <td>
+                                            {% if trabajador.activo %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            No hay trabajadores registrados aún
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

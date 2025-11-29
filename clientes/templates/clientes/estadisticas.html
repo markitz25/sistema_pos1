@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Estadísticas de Clientes{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-chart-bar"></i> Estadísticas de Clientes
+            </h2>
+        </div>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Clientes</h5>
+                    <h2>{{ total_clientes|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Clientes Activos</h5>
+                    <h2>{{ clientes_activos|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Clientes Inactivos</h5>
+                    <h2>{{ clientes_inactivos|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Nuevos este mes</h5>
+                    <h2>{{ clientes_nuevos_mes|default:0 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas detalladas -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Total Compras</h5>
+                </div>
+                <div class="card-body">
+                    <h3>COP {{ total_compras|default:0|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Promedio de Compra</h5>
+                </div>
+                <div class="card-body">
+                    <h3>COP {{ promedio_compra|default:0|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top clientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Top 20 Clientes</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_clientes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cliente</th>
+                                    <th>Cédula</th>
+                                    <th>Email</th>
+                                    <th class="text-end">Total Compras</th>
+                                    <th class="text-center">Compras</th>
+                                    <th>Última Compra</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in top_clientes %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ cliente.nombre }}</td>
+                                    <td>{{ cliente.cedula }}</td>
+                                    <td>{{ cliente.correo|default:"-" }}</td>
+                                    <td class="text-end">COP {{ cliente.total_gastado|default:0|floatformat:2 }}</td>
+                                    <td class="text-center">{{ cliente.num_compras|default:0 }}</td>
+                                    <td>{{ cliente.ultima_compra|date:"d/m/Y H:i" |default:"N/A" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">No hay datos disponibles.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de navegación -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'clientes:listar' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Volver a Clientes
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

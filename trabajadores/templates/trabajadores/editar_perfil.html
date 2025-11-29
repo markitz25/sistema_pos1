@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Mi Perfil{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user-edit"></i> Editar Mi Perfil
+                </h2>
+                <a href="{% url 'trabajadores:perfil' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                {{ form.nombre.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.nombre.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                {{ form.apellido.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.apellido }}
+                            {% if form.apellido.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.apellido.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.email.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.telefono.label }}</label>
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.telefono.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">{{ form.direccion.label }}</label>
+                            {{ form.direccion }}
+                            {% if form.direccion.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.direccion.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'trabajadores:perfil' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Nota -->
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i>
+                Para cambiar tu contraseña, usa la opción 
+                <a href="{% url 'trabajadores:cambiar_contraseña' %}">Cambiar Contraseña</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

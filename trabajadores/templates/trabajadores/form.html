@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-{% if es_nuevo %}user-plus{% else %}user-edit{% endif %}"></i>
+                    {{ titulo }}
+                </h2>
+                <a href="{% url 'trabajadores:listar' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <!-- Datos de Acceso -->
+                        <h5 class="border-bottom pb-2 mb-3">
+                            <i class="fas fa-key text-primary"></i> Datos de Acceso
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.username.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.username.errors }}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">Sin espacios ni caracteres especiales</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.email.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.email.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.password.label }}
+                                    {% if es_nuevo %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ form.password }}
+                                {% if form.password.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.password.errors }}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">{{ form.password.help_text }}</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.password_confirm.label }}
+                                    {% if es_nuevo %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ form.password_confirm }}
+                                {% if form.password_confirm.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.password_confirm.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Datos Personales -->
+                        <h5 class="border-bottom pb-2 mb-3">
+                            <i class="fas fa-id-card text-primary"></i> Datos Personales
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.nombre.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.nombre.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.apellido.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.apellido }}
+                                {% if form.apellido.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.apellido.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.telefono.label }}</label>
+                                {{ form.telefono }}
+                                {% if form.telefono.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.telefono.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.direccion.label }}</label>
+                                {{ form.direccion }}
+                                {% if form.direccion.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.direccion.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Configuración del Sistema -->
+                        <h5 class="border-bottom pb-2 mb-3">
+                            <i class="fas fa-cog text-primary"></i> Configuración del Sistema
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    {{ form.rol.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.rol }}
+                                {% if form.rol.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.rol.errors }}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    Admin: Acceso total | Trabajador: Acceso limitado
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.activo.label }}</label>
+                                <div class="form-check form-switch mt-2">
+                                    {{ form.activo }}
+                                    <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                                        Usuario activo en el sistema
+                                    </label>
+                                </div>
+                                {% if form.activo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.activo.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{% url 'trabajadores:listar' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                {% if es_nuevo %}Crear Trabajador{% else %}Guardar Cambios{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i>
+                <strong>Nota:</strong> Los campos marcados con 
+                <span class="text-danger">*</span> son obligatorios.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}Productos Más Vendidos - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'tablero:dashboard' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'reportes:dashboard' %}">Reportes</a></li>
+                    <li class="breadcrumb-item active">Productos Más Vendidos</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-trophy text-warning"></i> Productos Más Vendidos</h2>
+            <p class="text-muted">Análisis de los productos con mejor desempeño en ventas</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>{{ total_productos|default:"0" }}</h3>
+                    <small>Total Productos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>{{ productos_vendidos_count|default:"0" }}</h3>
+                    <small>Productos Vendidos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3>{{ total_unidades|default:"0" }}</h3>
+                    <small>Unidades Vendidas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h3>${{ total_ingresos|floatformat:0|default:"0" }}</h3>
+                    <small>Ingresos Totales</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Top 10 Productos -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-star text-warning"></i> Top 10 Productos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead style="background-color: #2c3e50; color: white;">
+                                <tr>
+                                    <th style="padding: 15px;">#</th>
+                                    <th style="padding: 15px;">PRODUCTO</th>
+                                    <th style="padding: 15px;">CATEGORÍA</th>
+                                    <th style="padding: 15px; text-align: center;">UNIDADES</th>
+                                    <th style="padding: 15px; text-align: right;">INGRESOS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_top %}
+                                <tr>
+                                    <td class="align-middle">
+                                        {% if forloop.counter == 1 %}
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-trophy"></i> 1°</span>
+                                        {% elif forloop.counter == 2 %}
+                                        <span class="badge bg-secondary">2°</span>
+                                        {% elif forloop.counter == 3 %}
+                                        <span class="badge bg-danger">3°</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-dark">{{ forloop.counter }}°</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        <strong>{{ producto.producto__nombre }}</strong>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="badge bg-info">{{ producto.producto__categoria__nombre|default:"Sin categoría" }}</span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge bg-primary">{{ producto.total_cantidad }}</span>
+                                    </td>
+                                    <td class="align-middle text-end">
+                                        <strong class="text-success">${{ producto.total_ingresos|floatformat:0 }}</strong>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="fas fa-box-open fa-3x text-muted mb-2"></i>
+                                        <p class="text-muted">No hay datos de ventas aún</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Distribución</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="productosPieChart" style="min-height:360px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Productos sin ventas -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-circle"></i> Sin Ventas</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2 text-muted">
+                        <strong>{{ productos_sin_ventas|default:"0" }}</strong> productos sin ninguna venta registrada
+                    </p>
+                    {% if productos_sin_ventas_lista %}
+                    <div class="table-responsive" style="max-height:200px; overflow-y:auto;">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Categoría</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in productos_sin_ventas_lista %}
+                                <tr>
+                                    <td>{{ p.nombre }}</td>
+                                    <td>{{ p.categoria.nombre|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col">
+            <a href="{% url 'reportes:dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Reportes
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('productosPieChart');
+    if (ctx) {
+        const labels = [{% for p in productos_top|slice:":5" %}'{{ p.producto__nombre|truncatechars:15 }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+        const data = [{% for p in productos_top|slice:":5" %}{{ p.total_cantidad }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.length > 0 ? labels : ['Sin datos'],
+                datasets: [{
+                    data: data.length > 0 ? data : [1],
+                    backgroundColor: [
+                        '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
